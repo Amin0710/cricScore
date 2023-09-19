@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
 import "./ScoreCard.css";
+import ReactDOMServer from "react-dom/server";
 
 const ScoreCard = () => {
 	const [score, setScore] = useState({
@@ -13,7 +14,6 @@ const ScoreCard = () => {
 	// Initialize score history state
 	const [scoreHistory, setScoreHistory] = useState([]);
 	const [oversHistory, setOversHistory] = useState([]);
-	// const [legalBalls, setLegalBalls] = useState(0);
 	const [ballScores, setBallScores] = useState([]);
 	const [ballWicket, setBallWicket] = useState([]);
 	const [ballWide, setBallWide] = useState([]);
@@ -22,7 +22,15 @@ const ScoreCard = () => {
 	const handleRuns = (run, wide = false, noBall = false, wicket = 0) => {
 		// Push current score to history before updating
 		setScoreHistory((prevHistory) => [...prevHistory, score]);
-		setBallScores((prevScores) => [...prevScores, run]);
+		let ballDescription = [];
+
+		if (wicket) ballDescription.push("Out");
+		if (noBall) ballDescription.push("N");
+		if (wide) ballDescription.push("Wd");
+		if (run === 0 && !wicket && !noBall && !wide) ballDescription.push("0");
+		if (run > 0) ballDescription.push(run.toString());
+
+		setBallScores((prevScores) => [...prevScores, ballDescription.join("+")]);
 
 		if (wicket) {
 			setBallWicket((prevWickets) => [...prevWickets, true]);
@@ -42,17 +50,12 @@ const ScoreCard = () => {
 
 		const extraball = wide || noBall;
 
-		if (!wide && !noBall) {
-			// setLegalBalls((prevLegalBalls) => prevLegalBalls + 1);
-		}
-
 		setScore((prevScore) => {
 			let newBalls = extraball ? prevScore.balls : prevScore.balls + 1;
 			let additionalBalls = 0;
 			if (newBalls >= 6) {
 				additionalBalls = 1;
 				newBalls = 0;
-				// setLegalBalls(0);
 			}
 			if (prevScore.wickets + wicket >= 10) {
 				Swal.fire({
@@ -70,18 +73,113 @@ const ScoreCard = () => {
 			return {
 				overs: prevScore.overs + additionalBalls,
 				balls: newBalls,
-				runs: prevScore.runs + run,
+				runs: extraball ? prevScore.runs + run + 1 : prevScore.runs + run,
 				wickets: prevScore.wickets + wicket,
 			};
 		});
 		// Check for end of over outside of setScore
 		if (score.balls === 5 && !extraball) {
-			setOversHistory((prevOvers) => [...prevOvers, [...ballScores, run]]);
+			setOversHistory((prevOvers) => [
+				...prevOvers,
+				[...ballScores, ballDescription.join("+")],
+			]);
 			setBallScores([]);
 			setBallWicket([]);
 			setBallWide([]);
 			setBallNO([]);
 		}
+	};
+
+	const handleNoBall = () => {
+		Swal.fire({
+			title: "Did the batsman score any runs off the no ball?",
+			input: "select",
+			inputOptions: {
+				0: "0",
+				1: "1",
+				2: "2",
+				3: "3",
+				4: "4",
+				6: "6",
+			},
+			confirmButtonText: "Done",
+		}).then((res) => {
+			const runsOffNoBall = Number(res.value);
+			handleRuns(runsOffNoBall, false, true);
+		});
+	};
+
+	const handleRunout = () => {
+		Swal.fire({
+			title: "New batsman in is the keeper side?",
+			showDenyButton: true,
+			confirmButtonText: "Yes, Keeper side",
+			denyButtonText: `No, Bowler side`,
+		}).then(() => {
+			Swal.fire({
+				title: "Is that a No Ball?",
+				showDenyButton: true,
+				confirmButtonText: "Vaild Ball",
+				denyButtonText: `No Ball`,
+			}).then((result) => {
+				Swal.fire({
+					title: "Did they successfully complete any run?",
+					input: "select",
+					inputOptions: {
+						0: "0",
+						1: "1",
+						2: "2",
+						3: "3",
+					},
+					confirmButtonText: "Done",
+				}).then((res) => {
+					const runCompletedBeforeRunOut = isNaN(Number(res.value))
+						? 0
+						: Number(res.value);
+					if (result.isConfirmed) {
+						handleRuns(0 + runCompletedBeforeRunOut, false, false, 1);
+					} else if (result.isDenied) {
+						handleRuns(0 + runCompletedBeforeRunOut, false, true, 1);
+					}
+				});
+			});
+		});
+	};
+
+	const showScoreboard = () => {
+		// Format the oversHistory to display each over's scores with alternating row colors
+		const formattedOvers = (
+			<table className="min-w-full border-collapse">
+				<thead>
+					<tr>
+						<th className="border p-2  w-1/4">Over</th>
+						<th className="border p-2  w-3/4">Score</th>
+					</tr>
+				</thead>
+				<tbody>
+					{oversHistory.map((overScores, overIndex) => {
+						const bgColorClass =
+							overIndex % 2 === 0 ? "bg-gray-300" : "bg-white";
+						return (
+							<tr key={overIndex} className={`${bgColorClass}`}>
+								<td className="border p-2  w-1/4">Over {overIndex + 1}</td>
+								<td className="border p-2  w-3/4">{overScores.join(" - ")}</td>
+							</tr>
+						);
+					})}
+				</tbody>
+			</table>
+		);
+
+		// Display the formatted scores in a popup
+		Swal.fire({
+			title: "Scoreboard",
+			html: ReactDOMServer.renderToStaticMarkup(<>{formattedOvers}</>),
+			confirmButtonText: "Close",
+			customClass: {
+				content: "scoreboard-content",
+			},
+		});
 	};
 
 	const handleUndo = () => {
@@ -103,35 +201,29 @@ const ScoreCard = () => {
 		});
 	};
 
-	const handleRunout = () => {
-		Swal.fire({
-			title: "New batsman in is the keeper side?",
-			showDenyButton: true,
-			confirmButtonText: "Yes, Keeper side",
-			denyButtonText: `No, Bowler side`,
-		}).then(() => {
-			Swal.fire({
-				title: "Is that a No Ball?",
-				showDenyButton: true,
-				confirmButtonText: "Vaild Ball",
-				denyButtonText: `No Ball`,
-			}).then((result) => {
-				Swal.fire({
-					title: "Did they successfully complete any run?",
-					input: "text",
-					confirmButtonText: "Done",
-				}).then((res) => {
-					const runCompletedBeforeRunOut = isNaN(Number(res.value))
-						? 0
-						: Number(res.value);
-					if (result.isConfirmed) {
-						handleRuns(0 + runCompletedBeforeRunOut, false, false, 1);
-					} else if (result.isDenied) {
-						handleRuns(1 + runCompletedBeforeRunOut, false, true, 1);
-					}
-				});
-			});
-		});
+	const getFontSizeClass = (text) => {
+		const length = text.length;
+
+		if (length <= 2) return "text-5xl";
+		if (length <= 4) return "text-3xl";
+		if (length <= 6) return "text-md";
+		return "text-sm";
+	};
+
+	const getButtonClass = (index, score) => {
+		if ((ballWide[index] || ballNO[index]) && ballWicket[index]) {
+			return "text-white half-warning-half-error";
+		}
+		if (ballWicket[index]) {
+			return "text-white bg-error";
+		}
+		if (ballWide[index] || ballNO[index]) {
+			return "text-white bg-warning";
+		}
+		if (score > 3) {
+			return "text-white bg-success";
+		}
+		return "bg-white";
 	};
 
 	return (
@@ -147,30 +239,17 @@ const ScoreCard = () => {
 				</div>
 
 				<div>
-					<div className="flex items-center justify-around flex-wrap text-xl">
+					<div className="flex items-center justify-around flex-wrap">
 						{ballScores.map((score, ballIndex) => {
 							const index = ballIndex;
 							return (
 								<button
 									key={ballIndex}
-									className={`w-10 h-10 border-2 border-gray-600 rounded-full focus:outline-none ${
-										(ballWide[index] || ballNO[index]) && ballWicket[index]
-											? "text-white half-warning-half-error"
-											: ballWicket[index]
-											? "text-white bg-error"
-											: ballWide[index] || ballNO[index]
-											? "text-white bg-warning"
-											: score > 3
-											? "text-white bg-success"
-											: "bg-white"
-									}`}>
-									{ballWicket[index]
-										? "Out"
-										: ballWide[index]
-										? "Wd"
-										: score === 0
-										? "."
-										: score}
+									className={`w-[80px] h-[80px] border-2 border-gray-600 rounded-full overflow-hidden focus:outline-none ${getButtonClass(
+										index,
+										score
+									)} ${getFontSizeClass(ballScores[index])}`}>
+									{ballScores[index]}
 								</button>
 							);
 						})}
@@ -209,12 +288,10 @@ const ScoreCard = () => {
 						</button>
 						<button
 							className="btn btn-warning text-2xl"
-							onClick={() => handleRuns(1, true)}>
+							onClick={() => handleRuns(0, true)}>
 							Wide
 						</button>
-						<button
-							className="btn btn-warning"
-							onClick={() => handleRuns(1, false, true)}>
+						<button className="btn btn-warning" onClick={handleNoBall}>
 							No Ball
 						</button>
 						<button
@@ -234,7 +311,11 @@ const ScoreCard = () => {
 						</button>
 					</div>
 					<div className="grid grid-cols-2 gap-2 mt-10">
-						<button className="btn btn-outline btn-info">Scoreboard</button>
+						<button
+							className="btn btn-outline btn-info"
+							onClick={showScoreboard}>
+							Scoreboard
+						</button>
 						<button className="btn btn-outline btn-error" onClick={handleUndo}>
 							Undo
 						</button>
