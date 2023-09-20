@@ -1,3 +1,6 @@
 .half-warning-half-error {
 	background: linear-gradient(to right, #f59e0b 50%, #ef4444 50%);
 }
+.half-warning-half-success {
+	background: linear-gradient(to right, #f59e0b 50%, #36d399 50%);
+}

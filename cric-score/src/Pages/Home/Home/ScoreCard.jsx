@@ -243,13 +243,15 @@ const ScoreCard = () => {
 	};
 
 	const getButtonClass = (index, score) => {
+		const isRunsOnNoBall = score.match(/^N\+(\d+)$/);
+		const isBoundaryOnNoBall = parseInt(isRunsOnNoBall[1], 10) > 3;
 		if ((ballWide[index] || ballNO[index]) && ballWicket[index]) {
 			return "text-white half-warning-half-error";
 		}
 		if (ballWicket[index]) {
 			return "text-white bg-error";
 		}
-		if (score > 3 && ballNO[index]) {
+		if (isBoundaryOnNoBall) {
 			return "text-white half-warning-half-success";
 		}
 		if (ballWide[index] || ballNO[index]) {
