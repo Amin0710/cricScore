@@ -191,7 +191,39 @@ const ScoreCard = () => {
 			denyButtonText: `Undo`,
 		}).then((result) => {
 			if (result.isDenied) {
-				// Pop the last score from history and set it as the current score
+				// If the current over has not started (ballScores is empty)
+				if (ballScores.length === 0 && oversHistory.length > 0) {
+					// Pop the last over from oversHistory
+					const lastOver = oversHistory.pop();
+					setOversHistory([...oversHistory]);
+
+					// Pop the last ball from the lastOver
+					lastOver.pop();
+					setBallScores(lastOver);
+
+					// Pop the last ball's data from the state arrays
+					ballWicket.pop();
+					ballWide.pop();
+					ballNO.pop();
+					setBallWicket([...ballWicket]);
+					setBallWide([...ballWide]);
+					setBallNO([...ballNO]);
+				} else {
+					// Pop the last score from ballScores
+					const newBallScores = [...ballScores];
+					newBallScores.pop();
+					setBallScores(newBallScores);
+
+					// Pop the last ball's data from the state arrays
+					ballWicket.pop();
+					ballWide.pop();
+					ballNO.pop();
+					setBallWicket([...ballWicket]);
+					setBallWide([...ballWide]);
+					setBallNO([...ballNO]);
+				}
+
+				// Pop the last score from scoreHistory and set it as the current score
 				if (scoreHistory.length > 0) {
 					const lastScore = scoreHistory.pop();
 					setScore(lastScore);
@@ -216,6 +248,9 @@ const ScoreCard = () => {
 		}
 		if (ballWicket[index]) {
 			return "text-white bg-error";
+		}
+		if (score > 3 && ballNO[index]) {
+			return "text-white half-warning-half-success";
 		}
 		if (ballWide[index] || ballNO[index]) {
 			return "text-white bg-warning";
