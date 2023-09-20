@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import "./ScoreCard.css";
 import ReactDOMServer from "react-dom/server";
@@ -19,6 +19,23 @@ const ScoreCard = () => {
 	const [ballWide, setBallWide] = useState([]);
 	const [ballNO, setBallNO] = useState([]);
 
+	const firstAllOutRef = useRef(true);
+	const allOutRef = useRef(false);
+
+	// Check for allOut and stop new over
+	useEffect(() => {
+		console.log(oversHistory);
+		if (score.wickets === 10 && !allOutRef.current) {
+			const updatedOvers = [...oversHistory];
+			if (!firstAllOutRef.current && updatedOvers.length > 0) {
+				updatedOvers.pop();
+			}
+			setOversHistory(updatedOvers);
+			allOutRef.current = true; // Mark the action as taken
+			firstAllOutRef.current = false;
+		}
+	}, [score.wickets, oversHistory]);
+
 	const handleRuns = (run, wide = false, noBall = false, wicket = 0) => {
 		// Push current score to history before updating
 		setScoreHistory((prevHistory) => [...prevHistory, score]);
@@ -31,6 +48,9 @@ const ScoreCard = () => {
 		if (run > 0) ballDescription.push(run.toString());
 
 		setBallScores((prevScores) => [...prevScores, ballDescription.join("+")]);
+		if (score.wickets >= 10) {
+			ballScores.pop();
+		}
 
 		if (wicket) {
 			setBallWicket((prevWickets) => [...prevWickets, true]);
@@ -52,12 +72,20 @@ const ScoreCard = () => {
 
 		setScore((prevScore) => {
 			let newBalls = extraball ? prevScore.balls : prevScore.balls + 1;
+			let newRuns = extraball ? prevScore.runs + run + 1 : prevScore.runs + run;
 			let additionalBalls = 0;
 			if (newBalls >= 6) {
 				additionalBalls = 1;
 				newBalls = 0;
 			}
-			if (prevScore.wickets + wicket >= 10) {
+			if (prevScore.wickets + wicket === 10) {
+				Swal.fire({
+					icon: "error",
+					title: "Oops... All out",
+					text: "End of Innings",
+				});
+			}
+			if (score.wickets === 10) {
 				Swal.fire({
 					icon: "error",
 					title: "Oops... All out",
@@ -73,20 +101,22 @@ const ScoreCard = () => {
 			return {
 				overs: prevScore.overs + additionalBalls,
 				balls: newBalls,
-				runs: extraball ? prevScore.runs + run + 1 : prevScore.runs + run,
+				runs: newRuns,
 				wickets: prevScore.wickets + wicket,
 			};
 		});
 		// Check for end of over outside of setScore
-		if (score.balls === 5 && !extraball) {
-			setOversHistory((prevOvers) => [
-				...prevOvers,
+		if ((score.balls === 5 && !extraball) || score.wickets + wicket >= 10) {
+			const updatedOvers = [
+				...oversHistory,
 				[...ballScores, ballDescription.join("+")],
-			]);
+			];
+			setOversHistory(updatedOvers);
 			setBallScores([]);
 			setBallWicket([]);
 			setBallWide([]);
 			setBallNO([]);
+			allOutRef.current = false; // Reset the ref when a new over starts
 		}
 	};
 
@@ -94,9 +124,7 @@ const ScoreCard = () => {
 		return (
 			<>
 				<div className="grid grid-cols-3 gap-2 mt-5">
-					<button
-						className="btn btn-info text-2xl"
-						onClick={() => handleRuns(0)}>
+					<button className="btn btn-info" onClick={() => handleRuns(0)}>
 						Dot
 					</button>
 					<button
@@ -125,7 +153,7 @@ const ScoreCard = () => {
 						6
 					</button>
 					<button
-						className="btn btn-warning text-2xl"
+						className="btn btn-warning"
 						onClick={() => handleRuns(0, true)}>
 						Wide
 					</button>
@@ -133,7 +161,7 @@ const ScoreCard = () => {
 						No Ball
 					</button>
 					<button
-						className="btn btn-error text-2xl"
+						className="btn btn-error"
 						onClick={() => handleRuns(0, false, false, 1)}>
 						Wicket
 					</button>
@@ -144,11 +172,58 @@ const ScoreCard = () => {
 						onClick={() => handleRuns(0, true, false, 1)}>
 						Wide + Stumping
 					</button>
-					<button className="btn btn-error text-2xl" onClick={handleRunout}>
+					<button className="btn btn-error" onClick={handleRunout}>
 						Run Out
 					</button>
 				</div>
 			</>
+		);
+	};
+	const ScoreChange = () => {
+		return (
+			<table className="min-w-full border-collapse">
+				<thead>
+					<tr>
+						<th className="border p-1">Runs</th>
+						<th className="border p-1">Wide/NO</th>
+						<th className="border p-1">Wicket</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td className="border p-1">
+							<select
+								id="runsDropdown"
+								className="dropdown bg-gray-200 p-1 m-1 rounded">
+								<option value="0">0</option>
+								<option value="1">1</option>
+								<option value="2">2</option>
+								<option value="3">3</option>
+								<option value="4">4</option>
+								<option value="5">5</option>
+								<option value="6">6</option>
+							</select>
+						</td>
+						<td className="border p-1">
+							<select
+								id="wideNoDropdown"
+								className="dropdown bg-gray-200 p-1 m-1 rounded">
+								<option value="0">None</option>
+								<option value="1">Wide</option>
+								<option value="2">No Ball</option>
+							</select>
+						</td>
+						<td className="border p-1">
+							<select
+								id="wicketDropdown"
+								className="dropdown bg-gray-200 p-1 m-1 rounded">
+								<option value="0">NO Wicket</option>
+								<option value="1">OUT</option>
+							</select>
+						</td>
+					</tr>
+				</tbody>
+			</table>
 		);
 	};
 
@@ -166,7 +241,7 @@ const ScoreCard = () => {
 			},
 			confirmButtonText: "Done",
 		}).then((res) => {
-			const runsOffNoBall = Number(res.value);
+			const runsOffNoBall = isNaN(Number(res.value)) ? 0 : Number(res.value);
 			handleRuns(runsOffNoBall, false, true);
 		});
 	};
@@ -252,6 +327,10 @@ const ScoreCard = () => {
 		const over = document.getElementById("changeOverInput").value;
 		const ball = document.getElementById("changeBallInput").value;
 
+		const OverToChange = document.getElementById("changeOverInput").value;
+
+		console.log(oversHistory[OverToChange - 1]);
+
 		if (!over || !ball) {
 			Swal.fire("Error", "Please enter both over and ball numbers.", "error");
 			return;
@@ -260,14 +339,35 @@ const ScoreCard = () => {
 		// Display the scoring options in a new popup
 		Swal.fire({
 			title: "Select Score",
-			html: ReactDOMServer.renderToStaticMarkup(
-				<div>{/* ... your scoring buttons ... */}</div>
-			),
+			html: ReactDOMServer.renderToStaticMarkup(<div>{ScoreChange()}</div>),
 			confirmButtonText: "Confirm",
+			didOpen: () => {
+				// This function is called after the modal is displayed
+				const wideNoDropdown = document.getElementById("wideNoDropdown");
+				const runsDropdown = document.getElementById("runsDropdown");
+
+				wideNoDropdown.addEventListener("change", (event) => {
+					if (event.target.value === "2") {
+						// If "Wide" is chosen
+						runsDropdown.value = "0"; // Set runs to 0
+					}
+				});
+			},
 		}).then((result) => {
 			if (result.isConfirmed) {
-				// Update the selected over's ball with the user's input
-				// You'll need to implement this logic based on your application's state management
+				// Retrieve the selected values from the dropdowns
+				const runsDropdown = document.getElementById("runsDropdown").value;
+				const wideNo = document.getElementById("wideNoDropdown").value;
+				const wicketDropdown = document.getElementById("wicketDropdown").value;
+
+				const runs = parseInt(runsDropdown, 10);
+				const wicket = parseInt(wicketDropdown, 10);
+
+				wideNo === 1
+					? handleRuns(runs, true, false, wicket)
+					: wideNo === 2
+					? handleRuns(runs, false, true, wicket)
+					: handleRuns(runs, false, false, wicket);
 			}
 		});
 	};
@@ -356,17 +456,16 @@ const ScoreCard = () => {
 
 	return (
 		<div className="container mx-auto text-center">
-			<div className="p-5 flex flex-col sm:flex-row justify-around items-center">
-				<div className="mb-3">
-					<span className="text-[30vw] lg:text-[15vw]">
-						{score.runs}/{score.wickets}
-					</span>
-					<span className="text-[10vw] lg:text-[5vw]">
-						{score.overs}.{score.balls}
-					</span>
-				</div>
-
+			<div className="p-5 flex flex-col sm:flex-row justify-around item-top">
 				<div>
+					<div className="mb-3">
+						<span className="text-[30vw] lg:text-[15vw]">
+							{score.runs}/{score.wickets}
+						</span>
+						<span className="text-[10vw] lg:text-[5vw]">
+							{score.overs}.{score.balls}
+						</span>
+					</div>
 					<div className="flex items-center justify-around flex-wrap">
 						{ballScores.map((score, ballIndex) => {
 							const index = ballIndex;
@@ -382,7 +481,9 @@ const ScoreCard = () => {
 							);
 						})}
 					</div>
+				</div>
 
+				<div>
 					{renderButtons()}
 
 					<div className="grid grid-cols-2 gap-2 mt-10">
