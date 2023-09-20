@@ -90,6 +90,68 @@ const ScoreCard = () => {
 		}
 	};
 
+	const renderButtons = () => {
+		return (
+			<>
+				<div className="grid grid-cols-3 gap-2 mt-5">
+					<button
+						className="btn btn-info text-2xl"
+						onClick={() => handleRuns(0)}>
+						Dot
+					</button>
+					<button
+						className="btn btn-info text-3xl"
+						onClick={() => handleRuns(1)}>
+						1
+					</button>
+					<button
+						className="btn btn-info text-3xl"
+						onClick={() => handleRuns(2)}>
+						2
+					</button>
+					<button
+						className="btn btn-info text-3xl"
+						onClick={() => handleRuns(3)}>
+						3
+					</button>
+					<button
+						className="btn btn-success text-3xl"
+						onClick={() => handleRuns(4)}>
+						4
+					</button>
+					<button
+						className="btn btn-success text-3xl"
+						onClick={() => handleRuns(6)}>
+						6
+					</button>
+					<button
+						className="btn btn-warning text-2xl"
+						onClick={() => handleRuns(0, true)}>
+						Wide
+					</button>
+					<button className="btn btn-warning" onClick={handleNoBall}>
+						No Ball
+					</button>
+					<button
+						className="btn btn-error text-2xl"
+						onClick={() => handleRuns(0, false, false, 1)}>
+						Wicket
+					</button>
+				</div>
+				<div className="grid grid-cols-2 gap-2 mt-5">
+					<button
+						className="btn btn-error "
+						onClick={() => handleRuns(0, true, false, 1)}>
+						Wide + Stumping
+					</button>
+					<button className="btn btn-error text-2xl" onClick={handleRunout}>
+						Run Out
+					</button>
+				</div>
+			</>
+		);
+	};
+
 	const handleNoBall = () => {
 		Swal.fire({
 			title: "Did the batsman score any runs off the no ball?",
@@ -149,26 +211,30 @@ const ScoreCard = () => {
 	const showScoreboard = () => {
 		// Format the oversHistory to display each over's scores with alternating row colors
 		const formattedOvers = (
-			<table className="min-w-full border-collapse">
-				<thead>
-					<tr>
-						<th className="border p-2  w-1/4">Over</th>
-						<th className="border p-2  w-3/4">Score</th>
-					</tr>
-				</thead>
-				<tbody>
-					{oversHistory.map((overScores, overIndex) => {
-						const bgColorClass =
-							overIndex % 2 === 0 ? "bg-gray-300" : "bg-white";
-						return (
-							<tr key={overIndex} className={`${bgColorClass}`}>
-								<td className="border p-2  w-1/4">Over {overIndex + 1}</td>
-								<td className="border p-2  w-3/4">{overScores.join(" - ")}</td>
-							</tr>
-						);
-					})}
-				</tbody>
-			</table>
+			<>
+				<table className="min-w-full border-collapse">
+					<thead>
+						<tr>
+							<th className="border p-2  w-1/4">Over</th>
+							<th className="border p-2  w-3/4">Score</th>
+						</tr>
+					</thead>
+					<tbody>
+						{oversHistory.map((overScores, overIndex) => {
+							const bgColorClass =
+								overIndex % 2 === 0 ? "bg-gray-300" : "bg-white";
+							return (
+								<tr key={overIndex} className={`${bgColorClass}`}>
+									<td className="border p-2  w-1/4">Over {overIndex + 1}</td>
+									<td className="border p-2  w-3/4">
+										{overScores.join(" - ")}
+									</td>
+								</tr>
+							);
+						})}
+					</tbody>
+				</table>
+			</>
 		);
 
 		// Display the formatted scores in a popup
@@ -179,6 +245,30 @@ const ScoreCard = () => {
 			customClass: {
 				content: "scoreboard-content",
 			},
+		});
+	};
+
+	const handleChangeScoreClick = () => {
+		const over = document.getElementById("changeOverInput").value;
+		const ball = document.getElementById("changeBallInput").value;
+
+		if (!over || !ball) {
+			Swal.fire("Error", "Please enter both over and ball numbers.", "error");
+			return;
+		}
+
+		// Display the scoring options in a new popup
+		Swal.fire({
+			title: "Select Score",
+			html: ReactDOMServer.renderToStaticMarkup(
+				<div>{/* ... your scoring buttons ... */}</div>
+			),
+			confirmButtonText: "Confirm",
+		}).then((result) => {
+			if (result.isConfirmed) {
+				// Update the selected over's ball with the user's input
+				// You'll need to implement this logic based on your application's state management
+			}
 		});
 	};
 
@@ -244,7 +334,8 @@ const ScoreCard = () => {
 
 	const getButtonClass = (index, score) => {
 		const isRunsOnNoBall = score.match(/^N\+(\d+)$/);
-		const isBoundaryOnNoBall = parseInt(isRunsOnNoBall[1], 10) > 3;
+		const isBoundaryOnNoBall =
+			isRunsOnNoBall && parseInt(isRunsOnNoBall[1], 10) > 3;
 		if ((ballWide[index] || ballNO[index]) && ballWicket[index]) {
 			return "text-white half-warning-half-error";
 		}
@@ -292,61 +383,8 @@ const ScoreCard = () => {
 						})}
 					</div>
 
-					<div className="grid grid-cols-3 gap-2 mt-5">
-						<button
-							className="btn btn-info text-2xl"
-							onClick={() => handleRuns(0)}>
-							Dot
-						</button>
-						<button
-							className="btn btn-info text-3xl"
-							onClick={() => handleRuns(1)}>
-							1
-						</button>
-						<button
-							className="btn btn-info text-3xl"
-							onClick={() => handleRuns(2)}>
-							2
-						</button>
-						<button
-							className="btn btn-info text-3xl"
-							onClick={() => handleRuns(3)}>
-							3
-						</button>
-						<button
-							className="btn btn-success text-3xl"
-							onClick={() => handleRuns(4)}>
-							4
-						</button>
-						<button
-							className="btn btn-success text-3xl"
-							onClick={() => handleRuns(6)}>
-							6
-						</button>
-						<button
-							className="btn btn-warning text-2xl"
-							onClick={() => handleRuns(0, true)}>
-							Wide
-						</button>
-						<button className="btn btn-warning" onClick={handleNoBall}>
-							No Ball
-						</button>
-						<button
-							className="btn btn-error text-2xl"
-							onClick={() => handleRuns(0, false, false, 1)}>
-							Wicket
-						</button>
-					</div>
-					<div className="grid grid-cols-2 gap-2 mt-5">
-						<button
-							className="btn btn-error "
-							onClick={() => handleRuns(0, true, false, 1)}>
-							Wide + Stumping
-						</button>
-						<button className="btn btn-error text-2xl" onClick={handleRunout}>
-							Run Out
-						</button>
-					</div>
+					{renderButtons()}
+
 					<div className="grid grid-cols-2 gap-2 mt-10">
 						<button
 							className="btn btn-outline btn-info"
@@ -358,6 +396,27 @@ const ScoreCard = () => {
 						</button>
 					</div>
 				</div>
+			</div>
+			<div className="mt-5">
+				<input
+					type="number"
+					placeholder="Over"
+					id="changeOverInput"
+					className="border p-2 mr-2"
+					min="0"
+					max={oversHistory.length}
+				/>
+				<input
+					type="number"
+					placeholder="Ball"
+					id="changeBallInput"
+					className="border p-2 mr-2"
+					min="1"
+					max="6"
+				/>
+				<button className="btn btn-info" onClick={handleChangeScoreClick}>
+					Change Score
+				</button>
 			</div>
 			<div>
 				{oversHistory.map((overScores, overIndex) => (
