@@ -18,13 +18,13 @@ const ScoreCard = () => {
 	const [ballWicket, setBallWicket] = useState([]);
 	const [ballWide, setBallWide] = useState([]);
 	const [ballNO, setBallNO] = useState([]);
+	const [selectedOverForChange, setSelectedOverForChange] = useState(0);
 
 	const firstAllOutRef = useRef(true);
 	const allOutRef = useRef(false);
 
 	// Check for allOut and stop new over
 	useEffect(() => {
-		console.log(oversHistory);
 		if (score.wickets === 10 && !allOutRef.current) {
 			const updatedOvers = [...oversHistory];
 			if (!firstAllOutRef.current && updatedOvers.length > 0) {
@@ -179,51 +179,75 @@ const ScoreCard = () => {
 			</>
 		);
 	};
-	const ScoreChange = () => {
+	const ScoreChange = (ballToChangeIsExtra) => {
 		return (
-			<table className="min-w-full border-collapse">
-				<thead>
-					<tr>
-						<th className="border p-1">Runs</th>
-						<th className="border p-1">Wide/NO</th>
-						<th className="border p-1">Wicket</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td className="border p-1">
-							<select
-								id="runsDropdown"
-								className="dropdown bg-gray-200 p-1 m-1 rounded">
-								<option value="0">0</option>
-								<option value="1">1</option>
-								<option value="2">2</option>
-								<option value="3">3</option>
-								<option value="4">4</option>
-								<option value="5">5</option>
-								<option value="6">6</option>
-							</select>
-						</td>
-						<td className="border p-1">
-							<select
-								id="wideNoDropdown"
-								className="dropdown bg-gray-200 p-1 m-1 rounded">
-								<option value="0">None</option>
-								<option value="1">Wide</option>
-								<option value="2">No Ball</option>
-							</select>
-						</td>
-						<td className="border p-1">
-							<select
-								id="wicketDropdown"
-								className="dropdown bg-gray-200 p-1 m-1 rounded">
-								<option value="0">NO Wicket</option>
-								<option value="1">OUT</option>
-							</select>
-						</td>
-					</tr>
-				</tbody>
-			</table>
+			<div>
+				<table className="min-w-full border-collapse">
+					<thead>
+						<tr>
+							<th className="border p-2">Add/Delete/Change</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td className="border p-2" colSpan="3">
+								<select
+									id="changeType"
+									className="dropdown bg-gray-200 p-1 m-1 rounded">
+									<option value="change">Change</option>
+									<option value="add">Add</option>
+									<option value="delete">Delete</option>
+								</select>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<table className="min-w-full border-collapse">
+					<thead>
+						<tr>
+							<th className="border p-1">Runs</th>
+							<th className="border p-1">Wide/NO</th>
+							<th className="border p-1">Wicket</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td className="border p-1">
+								<select
+									id="runsDropdown"
+									className="dropdown bg-gray-200 p-1 m-1 rounded">
+									<option value="0">0</option>
+									<option value="1">1</option>
+									<option value="2">2</option>
+									<option value="3">3</option>
+									<option value="4">4</option>
+									<option value="5">5</option>
+									<option value="6">6</option>
+								</select>
+							</td>
+							<td className="border p-1">
+								<select
+									id="wideNoDropdown"
+									className="dropdown bg-gray-200 p-1 m-1 rounded">
+									<option value="0" disabled={ballToChangeIsExtra}>
+										None
+									</option>
+									<option value="wide">Wide</option>
+									<option value="noball">No Ball</option>
+								</select>
+							</td>
+							<td className="border p-1">
+								<select
+									id="wicketDropdown"
+									className="dropdown bg-gray-200 p-1 m-1 rounded">
+									<option value="0">NO Wicket</option>
+									<option value="1">OUT</option>
+								</select>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 		);
 	};
 
@@ -327,9 +351,9 @@ const ScoreCard = () => {
 		const over = document.getElementById("changeOverInput").value;
 		const ball = document.getElementById("changeBallInput").value;
 
-		const OverToChange = document.getElementById("changeOverInput").value;
-
-		console.log(oversHistory[OverToChange - 1]);
+		const ballToChange = ball != 0 ? oversHistory[over][ball - 1] : "";
+		const ballToChangeIsExtra =
+			ballToChange.includes("Wd") || ballToChange.includes("N");
 
 		if (!over || !ball) {
 			Swal.fire("Error", "Please enter both over and ball numbers.", "error");
@@ -337,39 +361,47 @@ const ScoreCard = () => {
 		}
 
 		// Display the scoring options in a new popup
-		Swal.fire({
-			title: "Select Score",
-			html: ReactDOMServer.renderToStaticMarkup(<div>{ScoreChange()}</div>),
-			confirmButtonText: "Confirm",
-			didOpen: () => {
-				// This function is called after the modal is displayed
-				const wideNoDropdown = document.getElementById("wideNoDropdown");
-				const runsDropdown = document.getElementById("runsDropdown");
+		if (ball != 0) {
+			Swal.fire({
+				title: "Select Score",
+				html: ReactDOMServer.renderToStaticMarkup(
+					<div>{ScoreChange(ballToChangeIsExtra)}</div>
+				),
+				confirmButtonText: "Confirm",
+				didOpen: () => {
+					// This function is called after the modal is displayed
+					const wideNoDropdown = document.getElementById("wideNoDropdown");
+					const runsDropdown = document.getElementById("runsDropdown");
 
-				wideNoDropdown.addEventListener("change", (event) => {
-					if (event.target.value === "2") {
-						// If "Wide" is chosen
-						runsDropdown.value = "0"; // Set runs to 0
-					}
-				});
-			},
-		}).then((result) => {
-			if (result.isConfirmed) {
-				// Retrieve the selected values from the dropdowns
-				const runsDropdown = document.getElementById("runsDropdown").value;
-				const wideNo = document.getElementById("wideNoDropdown").value;
-				const wicketDropdown = document.getElementById("wicketDropdown").value;
+					wideNoDropdown.addEventListener("change", (event) => {
+						if (event.target.value === "2") {
+							// If "Wide" is chosen
+							runsDropdown.value = "0"; // Set runs to 0
+						}
+					});
+				},
+			}).then((result) => {
+				if (result.isConfirmed) {
+					// Retrieve the selected values from the dropdowns
+					const runsDropdown = document.getElementById("runsDropdown").value;
+					const wideNo = document.getElementById("wideNoDropdown").value;
+					const wicketDropdown =
+						document.getElementById("wicketDropdown").value;
 
-				const runs = parseInt(runsDropdown, 10);
-				const wicket = parseInt(wicketDropdown, 10);
+					const runs = parseInt(runsDropdown, 10);
+					const wicket = parseInt(wicketDropdown, 10);
 
-				wideNo === 1
-					? handleRuns(runs, true, false, wicket)
-					: wideNo === 2
-					? handleRuns(runs, false, true, wicket)
-					: handleRuns(runs, false, false, wicket);
-			}
-		});
+					console.log(ballToChange);
+					console.log(ballToChangeIsExtra);
+
+					wideNo === "wide"
+						? handleRuns(runs, true, false, wicket)
+						: wideNo === "noball"
+						? handleRuns(runs, false, true, wicket)
+						: handleRuns(runs, false, false, wicket);
+				}
+			});
+		}
 	};
 
 	const handleUndo = () => {
@@ -505,15 +537,21 @@ const ScoreCard = () => {
 					id="changeOverInput"
 					className="border p-2 mr-2"
 					min="0"
-					max={oversHistory.length}
+					max={oversHistory.length ? oversHistory.length - 1 : 0}
+					value={selectedOverForChange}
+					onChange={(e) => setSelectedOverForChange(Number(e.target.value))}
 				/>
 				<input
 					type="number"
 					placeholder="Ball"
 					id="changeBallInput"
 					className="border p-2 mr-2"
-					min="1"
-					max="6"
+					min={oversHistory[selectedOverForChange] ? 1 : 0}
+					max={
+						oversHistory[selectedOverForChange]
+							? oversHistory[selectedOverForChange].length
+							: 0
+					}
 				/>
 				<button className="btn btn-info" onClick={handleChangeScoreClick}>
 					Change Score
