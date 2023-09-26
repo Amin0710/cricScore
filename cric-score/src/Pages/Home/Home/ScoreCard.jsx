@@ -1,7 +1,10 @@
+/* eslint-disable react/prop-types */
 import { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import "./ScoreCard.css";
 import ReactDOMServer from "react-dom/server";
+import ScoreChangePopUp from "./ScoreChangePopUp";
+import ReactDOM from "react-dom";
 
 const ScoreCard = () => {
 	const [score, setScore] = useState({
@@ -19,6 +22,7 @@ const ScoreCard = () => {
 	const [ballWide, setBallWide] = useState([]);
 	const [ballNO, setBallNO] = useState([]);
 	const [selectedOverForChange, setSelectedOverForChange] = useState(0);
+	const [changeType, setChangeType] = useState("change");
 
 	const firstAllOutRef = useRef(true);
 	const allOutRef = useRef(false);
@@ -179,77 +183,6 @@ const ScoreCard = () => {
 			</>
 		);
 	};
-	const ScoreChange = (ballToChangeIsExtra) => {
-		return (
-			<div>
-				<table className="min-w-full border-collapse">
-					<thead>
-						<tr>
-							<th className="border p-2">Add/Delete/Change</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td className="border p-2" colSpan="3">
-								<select
-									id="changeType"
-									className="dropdown bg-gray-200 p-1 m-1 rounded">
-									<option value="change">Change</option>
-									<option value="add">Add</option>
-									<option value="delete">Delete</option>
-								</select>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-				<table className="min-w-full border-collapse">
-					<thead>
-						<tr>
-							<th className="border p-1">Runs</th>
-							<th className="border p-1">Wide/NO</th>
-							<th className="border p-1">Wicket</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td className="border p-1">
-								<select
-									id="runsDropdown"
-									className="dropdown bg-gray-200 p-1 m-1 rounded">
-									<option value="0">0</option>
-									<option value="1">1</option>
-									<option value="2">2</option>
-									<option value="3">3</option>
-									<option value="4">4</option>
-									<option value="5">5</option>
-									<option value="6">6</option>
-								</select>
-							</td>
-							<td className="border p-1">
-								<select
-									id="wideNoDropdown"
-									className="dropdown bg-gray-200 p-1 m-1 rounded">
-									<option value="0" disabled={ballToChangeIsExtra}>
-										None
-									</option>
-									<option value="wide">Wide</option>
-									<option value="noball">No Ball</option>
-								</select>
-							</td>
-							<td className="border p-1">
-								<select
-									id="wicketDropdown"
-									className="dropdown bg-gray-200 p-1 m-1 rounded">
-									<option value="0">NO Wicket</option>
-									<option value="1">OUT</option>
-								</select>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-		);
-	};
 
 	const handleNoBall = () => {
 		Swal.fire({
@@ -347,58 +280,148 @@ const ScoreCard = () => {
 		});
 	};
 
+	function extractRunsFromBall(ballToChange) {
+		const ballHasRuns =
+			/^[0-6]$/.test(ballToChange) || /.+[0-6]$/.test(ballToChange);
+		return ballHasRuns ? parseInt(ballToChange.match(/([0-6])$/)?.[1], 10) : 0;
+	}
+	function extractWicketFromBall(ballToChange) {
+		return ballToChange.includes("Out") ? 1 : 0;
+	}
+
 	const handleChangeScoreClick = () => {
 		const over = document.getElementById("changeOverInput").value;
 		const ball = document.getElementById("changeBallInput").value;
 
-		const ballToChange = ball != 0 ? oversHistory[over][ball - 1] : "";
+		// const ValidBallsCount = oversHistory[over -1]
+		// 	? oversHistory[over -1 ].filter((item) => !item.includes("N") && !item.includes("Wd") ).length
+		// 	: 0;
+
+		const ballToChange = ball != 0 ? oversHistory[over - 1][ball - 1] : "";
 		const ballToChangeIsExtra =
 			ballToChange.includes("Wd") || ballToChange.includes("N");
+		const ballToChangeIsWicket = extractWicketFromBall(ballToChange);
+		const runsFromBallToChange = extractRunsFromBall(ballToChange);
 
 		if (!over || !ball) {
 			Swal.fire("Error", "Please enter both over and ball numbers.", "error");
 			return;
 		}
 
+		console.log(ballToChangeIsExtra);
+		console.log("w", ballToChangeIsWicket);
+		console.log("r", runsFromBallToChange);
+
 		// Display the scoring options in a new popup
 		if (ball != 0) {
+			// Create a DOM container for the React component
+			const swalContent = document.createElement("div");
+
+			// Use createRoot for rendering
+			const root = ReactDOM.createRoot(swalContent);
+
+			const handleTypeChange = (event) => {
+				console.log("Selected value:", event.target.value);
+				setChangeType(event.target.value);
+
+				// Force re-render of the ScoreChangePopUp component inside the Swal modal
+				root.render(
+					<ScoreChangePopUp
+						ballToChangeIsExtra={ballToChangeIsExtra}
+						over={over}
+						ball={ball}
+						changeType={event.target.value} // Use the new value directly
+						handleTypeChange={handleTypeChange}
+					/>
+				);
+				Swal.update({
+					html: swalContent,
+				});
+			};
+			root.render(
+				<ScoreChangePopUp
+					ballToChangeIsExtra={ballToChangeIsExtra}
+					over={over}
+					ball={ball}
+					changeType={changeType}
+					handleTypeChange={handleTypeChange}
+				/>
+			);
 			Swal.fire({
 				title: "Select Score",
-				html: ReactDOMServer.renderToStaticMarkup(
-					<div>{ScoreChange(ballToChangeIsExtra)}</div>
-				),
+				html: swalContent,
 				confirmButtonText: "Confirm",
-				didOpen: () => {
-					// This function is called after the modal is displayed
-					const wideNoDropdown = document.getElementById("wideNoDropdown");
-					const runsDropdown = document.getElementById("runsDropdown");
+				preConfirm: () => {
+					// Retrieve the selected values from the dropdowns
+					const changeTypeValue = document.getElementById("changeType").value; // prettier-ignore
+					const runsDropdownValue =document.getElementById("runsDropdown").value; // prettier-ignore
+					const wideNoDropdownValue =document.getElementById("wideNoDropdown").value; // prettier-ignore
+					const wicketDropdownValue =document.getElementById("wicketDropdown").value; // prettier-ignore
 
-					wideNoDropdown.addEventListener("change", (event) => {
-						if (event.target.value === "2") {
-							// If "Wide" is chosen
-							runsDropdown.value = "0"; // Set runs to 0
-						}
-					});
+					return {
+						changeTypeSelected: changeTypeValue,
+						runsSelected: parseInt(runsDropdownValue, 10),
+						wideNoSelected: wideNoDropdownValue,
+						wicketSelected: parseInt(wicketDropdownValue, 10),
+					};
 				},
 			}).then((result) => {
 				if (result.isConfirmed) {
-					// Retrieve the selected values from the dropdowns
-					const runsDropdown = document.getElementById("runsDropdown").value;
-					const wideNo = document.getElementById("wideNoDropdown").value;
-					const wicketDropdown =
-						document.getElementById("wicketDropdown").value;
+					const {
+						changeTypeSelected,
+						runsSelected,
+						wideNoSelected,
+						wicketSelected,
+					} = result.value;
+					// Construct the new score string based on the selected values
+					let newScore = [];
+					if (wicketSelected) newScore.push("Out");
+					if (wideNoSelected === "noball") newScore.push("N");
+					if (wideNoSelected === "wide") newScore.push("Wd");
+					if (
+						runsSelected === 0 &&
+						!wicketSelected &&
+						wideNoSelected !== "noball" &&
+						wideNoSelected !== "wide"
+					)
+						newScore.push("0");
+					if (runsSelected > 0) newScore.push(runsSelected.toString());
 
-					const runs = parseInt(runsDropdown, 10);
-					const wicket = parseInt(wicketDropdown, 10);
+					const changedBall = newScore.join("+");
+					const runsAfterChange = extractRunsFromBall(changedBall);
+					const newWicketAfterChange = extractWicketFromBall(changedBall);
 
-					console.log(ballToChange);
-					console.log(ballToChangeIsExtra);
+					if (changeTypeSelected === "change") {
+						const wicketDifference = newWicketAfterChange - ballToChangeIsWicket; // prettier-ignore
+						const runDifference = runsAfterChange - runsFromBallToChange;
 
-					wideNo === "wide"
-						? handleRuns(runs, true, false, wicket)
-						: wideNo === "noball"
-						? handleRuns(runs, false, true, wicket)
-						: handleRuns(runs, false, false, wicket);
+						setScore((prevScore) => {
+							return {
+								...prevScore,
+								runs: prevScore.runs + runDifference,
+								wickets: prevScore.wickets + wicketDifference,
+							};
+						});
+
+						// Replace the score in oversHistory
+						oversHistory[over - 1][ball - 1] = changedBall;
+						setOversHistory([...oversHistory]); // Update the state to reflect the change in the scoreboard
+					}
+
+					if (changeTypeSelected === "add") {
+						setScore((prevScore) => {
+							return {
+								...prevScore,
+								runs: prevScore.runs + runsAfterChange,
+								wickets: prevScore.wickets + newWicketAfterChange,
+							};
+						});
+
+						// Insert the new ball at the specified location in the current over in oversHistory
+						oversHistory[over - 1].splice(ball - 1, 0, changedBall);
+
+						setOversHistory([...oversHistory]); // Update the state to reflect the addition in the scoreboard
+					}
 				}
 			});
 		}
@@ -536,8 +559,8 @@ const ScoreCard = () => {
 					placeholder="Over"
 					id="changeOverInput"
 					className="border p-2 mr-2"
-					min="0"
-					max={oversHistory.length ? oversHistory.length - 1 : 0}
+					min={oversHistory[selectedOverForChange] ? 1 : 0}
+					max={oversHistory.length ? oversHistory.length : 0}
 					value={selectedOverForChange}
 					onChange={(e) => setSelectedOverForChange(Number(e.target.value))}
 				/>
