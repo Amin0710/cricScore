@@ -4,7 +4,7 @@ import Swal from "sweetalert2";
 import "./ScoreCard.css";
 import ReactDOMServer from "react-dom/server";
 import ScoreChangePopUp from "./ScoreChangePopUp";
-import ReactDOM from "react-dom";
+import ReactDOM from "react-dom/client";
 
 const ScoreCard = () => {
 	const [score, setScore] = useState({
@@ -308,10 +308,6 @@ const ScoreCard = () => {
 			return;
 		}
 
-		console.log(ballToChangeIsExtra);
-		console.log("w", ballToChangeIsWicket);
-		console.log("r", runsFromBallToChange);
-
 		// Display the scoring options in a new popup
 		if (ball != 0) {
 			// Create a DOM container for the React component
@@ -321,7 +317,6 @@ const ScoreCard = () => {
 			const root = ReactDOM.createRoot(swalContent);
 
 			const handleTypeChange = (event) => {
-				console.log("Selected value:", event.target.value);
 				setChangeType(event.target.value);
 
 				// Force re-render of the ScoreChangePopUp component inside the Swal modal
@@ -388,40 +383,44 @@ const ScoreCard = () => {
 					if (runsSelected > 0) newScore.push(runsSelected.toString());
 
 					const changedBall = newScore.join("+");
-					const runsAfterChange = extractRunsFromBall(changedBall);
-					const newWicketAfterChange = extractWicketFromBall(changedBall);
+					let runsAfterChange = extractRunsFromBall(changedBall);
+					let newWicketAfterChange = extractWicketFromBall(changedBall);
 
 					if (changeTypeSelected === "change") {
-						const wicketDifference = newWicketAfterChange - ballToChangeIsWicket; // prettier-ignore
-						const runDifference = runsAfterChange - runsFromBallToChange;
-
-						setScore((prevScore) => {
-							return {
-								...prevScore,
-								runs: prevScore.runs + runDifference,
-								wickets: prevScore.wickets + wicketDifference,
-							};
-						});
+						newWicketAfterChange = newWicketAfterChange - ballToChangeIsWicket; // prettier-ignore
+						runsAfterChange = runsAfterChange - runsFromBallToChange;
 
 						// Replace the score in oversHistory
 						oversHistory[over - 1][ball - 1] = changedBall;
-						setOversHistory([...oversHistory]); // Update the state to reflect the change in the scoreboard
 					}
 
 					if (changeTypeSelected === "add") {
-						setScore((prevScore) => {
-							return {
-								...prevScore,
-								runs: prevScore.runs + runsAfterChange,
-								wickets: prevScore.wickets + newWicketAfterChange,
-							};
-						});
-
 						// Insert the new ball at the specified location in the current over in oversHistory
 						oversHistory[over - 1].splice(ball - 1, 0, changedBall);
-
-						setOversHistory([...oversHistory]); // Update the state to reflect the addition in the scoreboard
+						runsAfterChange += 1; // only wide No can be added later
 					}
+
+					if (changeTypeSelected === "delete") {
+						// Remove the ball from the current over in oversHistory
+						oversHistory[over - 1].splice(ball - 1, 1);
+
+						// Adjust the score values based on the ball that's being deleted
+						newWicketAfterChange = -ballToChangeIsWicket;
+						runsAfterChange = -runsFromBallToChange - 1; // only wide No can be deleted later
+					}
+
+					setScore((prevScore) => {
+						return {
+							...prevScore,
+							runs: prevScore.runs + runsAfterChange,
+							wickets: prevScore.wickets + newWicketAfterChange,
+						};
+					});
+					setOversHistory([...oversHistory]); // Update the state to reflect the addition in the scoreboard
+
+					setSelectedOverForChange("");
+					document.getElementById("changeBallInput").value = "";
+					setChangeType("change");
 				}
 			});
 		}
@@ -561,7 +560,7 @@ const ScoreCard = () => {
 					className="border p-2 mr-2"
 					min={oversHistory[selectedOverForChange] ? 1 : 0}
 					max={oversHistory.length ? oversHistory.length : 0}
-					value={selectedOverForChange}
+					value={selectedOverForChange || ""}
 					onChange={(e) => setSelectedOverForChange(Number(e.target.value))}
 				/>
 				<input
@@ -569,10 +568,10 @@ const ScoreCard = () => {
 					placeholder="Ball"
 					id="changeBallInput"
 					className="border p-2 mr-2"
-					min={oversHistory[selectedOverForChange] ? 1 : 0}
+					min={oversHistory[selectedOverForChange - 1] ? 1 : 0}
 					max={
-						oversHistory[selectedOverForChange]
-							? oversHistory[selectedOverForChange].length
+						oversHistory[selectedOverForChange - 1]
+							? oversHistory[selectedOverForChange - 1].length
 							: 0
 					}
 				/>

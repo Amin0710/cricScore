@@ -32,7 +32,9 @@ const ScoreChangePopUp = ({
 								className="dropdown bg-gray-200 p-1 m-1 rounded"
 								value={changeType}
 								onChange={handleTypeChange}>
-								<option value="change">Change</option>
+								<option value="change" selected={!ballToChangeIsExtra}>
+									Change
+								</option>
 								<option value="add">Add</option>
 								<option value="delete" disabled={!ballToChangeIsExtra}>
 									Delete
@@ -71,12 +73,21 @@ const ScoreChangePopUp = ({
 								className="dropdown bg-gray-200 p-1 m-1 rounded">
 								<option
 									value="0"
-									disabled={changeType === "add" || changeType === "delete"}>
+									disabled={
+										(ballToChangeIsExtra && changeType === "change") ||
+										changeType === "add" ||
+										changeType === "delete"
+									}>
 									None
 								</option>
 								<option
 									value="wide"
-									disabled={!ballToChangeIsExtra && changeType === "change"}>
+									disabled={!ballToChangeIsExtra && changeType === "change"}
+									selected={
+										(ballToChangeIsExtra && changeType === "change") ||
+										changeType === "add" ||
+										changeType === "delete"
+									}>
 									Wide
 								</option>
 								<option
