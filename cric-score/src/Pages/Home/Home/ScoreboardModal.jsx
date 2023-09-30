@@ -10,9 +10,13 @@ const ScoreboardModal = ({
 	selectedOverForChange,
 }) => {
 	return (
-		<Modal isOpen={isOpen} onRequestClose={onRequestClose}>
-			<>
-				<h1>Scoreboard</h1>
+		<Modal
+			isOpen={isOpen}
+			onRequestClose={onRequestClose}
+			className="flex items-center justify-center"
+			style={{ overlay: { backgroundColor: "rgba(0, 0, 0, 0.5)" } }}>
+			<div className="mt-5 mx-2 bg-white rounded text-black p-4 max-w-xl w-full">
+				<h1 className="text-4xl text-center text-gray-800 mb-3">Scoreboard</h1>
 				<table className="min-w-full border-collapse">
 					<thead>
 						<tr>
@@ -62,7 +66,7 @@ const ScoreboardModal = ({
 						Change Score
 					</button>
 				</div>
-			</>
+			</div>
 		</Modal>
 	);
 };
