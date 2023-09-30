@@ -2,9 +2,9 @@
 import { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import "./ScoreCard.css";
-import ReactDOMServer from "react-dom/server";
 import ScoreChangePopUp from "./ScoreChangePopUp";
 import ReactDOM from "react-dom/client";
+import ScoreboardModal from "./ScoreboardModal";
 
 const ScoreCard = () => {
 	const [score, setScore] = useState({
@@ -23,6 +23,7 @@ const ScoreCard = () => {
 	const [ballNO, setBallNO] = useState([]);
 	const [selectedOverForChange, setSelectedOverForChange] = useState(0);
 	const [changeType, setChangeType] = useState("change");
+	const [isModalOpen, setIsModalOpen] = useState(false);
 
 	const firstAllOutRef = useRef(true);
 	const allOutRef = useRef(false);
@@ -241,43 +242,7 @@ const ScoreCard = () => {
 	};
 
 	const showScoreboard = () => {
-		// Format the oversHistory to display each over's scores with alternating row colors
-		const formattedOvers = (
-			<>
-				<table className="min-w-full border-collapse">
-					<thead>
-						<tr>
-							<th className="border p-2  w-1/4">Over</th>
-							<th className="border p-2  w-3/4">Score</th>
-						</tr>
-					</thead>
-					<tbody>
-						{oversHistory.map((overScores, overIndex) => {
-							const bgColorClass =
-								overIndex % 2 === 0 ? "bg-gray-300" : "bg-white";
-							return (
-								<tr key={overIndex} className={`${bgColorClass}`}>
-									<td className="border p-2  w-1/4">Over {overIndex + 1}</td>
-									<td className="border p-2  w-3/4">
-										{overScores.join(" - ")}
-									</td>
-								</tr>
-							);
-						})}
-					</tbody>
-				</table>
-			</>
-		);
-
-		// Display the formatted scores in a popup
-		Swal.fire({
-			title: "Scoreboard",
-			html: ReactDOMServer.renderToStaticMarkup(<>{formattedOvers}</>),
-			confirmButtonText: "Close",
-			customClass: {
-				content: "scoreboard-content",
-			},
-		});
+		setIsModalOpen(true);
 	};
 
 	function extractRunsFromBall(ballToChange) {
@@ -552,33 +517,6 @@ const ScoreCard = () => {
 					</div>
 				</div>
 			</div>
-			<div className="mt-5">
-				<input
-					type="number"
-					placeholder="Over"
-					id="changeOverInput"
-					className="border p-2 mr-2"
-					min={oversHistory[selectedOverForChange] ? 1 : 0}
-					max={oversHistory.length ? oversHistory.length : 0}
-					value={selectedOverForChange || ""}
-					onChange={(e) => setSelectedOverForChange(Number(e.target.value))}
-				/>
-				<input
-					type="number"
-					placeholder="Ball"
-					id="changeBallInput"
-					className="border p-2 mr-2"
-					min={oversHistory[selectedOverForChange - 1] ? 1 : 0}
-					max={
-						oversHistory[selectedOverForChange - 1]
-							? oversHistory[selectedOverForChange - 1].length
-							: 0
-					}
-				/>
-				<button className="btn btn-info" onClick={handleChangeScoreClick}>
-					Change Score
-				</button>
-			</div>
 			<div>
 				{oversHistory.map((overScores, overIndex) => (
 					<div key={overIndex}>
@@ -591,6 +529,14 @@ const ScoreCard = () => {
 					</div>
 				))}
 			</div>
+			<ScoreboardModal
+				isOpen={isModalOpen}
+				onRequestClose={() => setIsModalOpen(false)}
+				oversHistory={oversHistory}
+				handleChangeScoreClick={handleChangeScoreClick}
+				setSelectedOverForChange={setSelectedOverForChange}
+				selectedOverForChange={selectedOverForChange}
+			/>
 		</div>
 	);
 };
