@@ -13,6 +13,7 @@ const ScoreboardModal = ({
 		<Modal
 			isOpen={isOpen}
 			onRequestClose={onRequestClose}
+			ariaHideApp={false}
 			className="flex items-center justify-center"
 			style={{ overlay: { backgroundColor: "rgba(0, 0, 0, 0.9)" } }}>
 			<div className="mt-5 mx-2 bg-white rounded text-black p-4 max-w-xl w-full">
