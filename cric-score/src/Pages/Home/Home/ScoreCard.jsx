@@ -242,6 +242,7 @@ const ScoreCard = () => {
 	};
 
 	const showScoreboard = () => {
+		setSelectedOverForChange("");
 		setIsModalOpen(true);
 	};
 
@@ -258,20 +259,21 @@ const ScoreCard = () => {
 		const over = document.getElementById("changeOverInput").value;
 		const ball = document.getElementById("changeBallInput").value;
 
+		if (!over || !ball) {
+			Swal.fire("Error", "Please enter both over and ball numbers.", "error");
+			return;
+		}
+
 		// const ValidBallsCount = oversHistory[over -1]
 		// 	? oversHistory[over -1 ].filter((item) => !item.includes("N") && !item.includes("Wd") ).length
 		// 	: 0;
 
 		const ballToChange = ball != 0 ? oversHistory[over - 1][ball - 1] : "";
+
 		const ballToChangeIsExtra =
 			ballToChange.includes("Wd") || ballToChange.includes("N");
 		const ballToChangeIsWicket = extractWicketFromBall(ballToChange);
 		const runsFromBallToChange = extractRunsFromBall(ballToChange);
-
-		if (!over || !ball) {
-			Swal.fire("Error", "Please enter both over and ball numbers.", "error");
-			return;
-		}
 
 		// Display the scoring options in a new popup
 		if (ball != 0) {

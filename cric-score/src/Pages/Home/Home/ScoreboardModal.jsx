@@ -40,28 +40,32 @@ const ScoreboardModal = ({
 					</tbody>
 				</table>
 				<div className="mt-5 text-white">
-					<input
-						type="number"
-						placeholder="Over"
+					<select
 						id="changeOverInput"
-						className="border p-2 mr-2"
-						min={oversHistory[selectedOverForChange] ? 1 : 0}
-						max={oversHistory.length ? oversHistory.length : 0}
+						className="border p-2 mr-2 min-w-[25%]"
 						value={selectedOverForChange || ""}
-						onChange={(e) => setSelectedOverForChange(Number(e.target.value))}
-					/>
-					<input
-						type="number"
-						placeholder="Ball"
-						id="changeBallInput"
-						className="border p-2 mr-2"
-						min={oversHistory[selectedOverForChange - 1] ? 1 : 0}
-						max={
-							oversHistory[selectedOverForChange - 1]
-								? oversHistory[selectedOverForChange - 1].length
-								: 0
-						}
-					/>
+						onChange={(e) => setSelectedOverForChange(Number(e.target.value))}>
+						<option value="" disabled>
+							Select an Over
+						</option>
+						{Array.from({ length: oversHistory.length || 0 }, (_, index) => (
+							<option key={index} value={index + 1}>
+								{index + 1}
+							</option>
+						))}
+					</select>
+					<select id="changeBallInput" className="border p-2 mr-2 min-w-[25%]">
+						{selectedOverForChange &&
+							Array.from(
+								{ length: oversHistory[selectedOverForChange - 1].length || 1 },
+								(_, index) => (
+									<option key={index} value={index + 1}>
+										{index + 1}
+									</option>
+								)
+							)}
+					</select>
+
 					<button className="btn btn-info" onClick={handleChangeScoreClick}>
 						Change Score
 					</button>
