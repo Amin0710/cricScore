@@ -42,34 +42,43 @@ const ScoreboardModal = ({
 						</tbody>
 					</table>
 				</div>
-				<div className="mt-5 text-white">
-					<select
-						id="changeOverInput"
-						className="border p-2 mr-2"
-						value={selectedOverForChange || ""}
-						onChange={(e) => setSelectedOverForChange(Number(e.target.value))}>
-						<option value="" disabled>
-							Select an Over
-						</option>
-						{Array.from({ length: oversHistory.length || 0 }, (_, index) => (
-							<option key={index} value={index + 1}>
-								{index + 1}
+				<div className="mt-5 text-white flex justify-between">
+					<div className="max-w-[70%]">
+						<select
+							id="changeOverInput"
+							className="border p-2 mr-2 max-w-[70%]"
+							value={selectedOverForChange || ""}
+							onChange={(e) =>
+								setSelectedOverForChange(Number(e.target.value))
+							}>
+							<option value="" disabled>
+								Select an Over
 							</option>
-						))}
-					</select>
-					<select id="changeBallInput" className="border p-2 mr-2">
-						{selectedOverForChange &&
-							Array.from(
-								{ length: oversHistory[selectedOverForChange - 1].length || 1 },
-								(_, index) => (
-									<option key={index} value={index + 1}>
-										{index + 1}
-									</option>
-								)
-							)}
-					</select>
+							{Array.from({ length: oversHistory.length || 0 }, (_, index) => (
+								<option key={index} value={index + 1}>
+									{index + 1}
+								</option>
+							))}
+						</select>
+						<select id="changeBallInput" className="border p-2 mr-2 ">
+							{selectedOverForChange &&
+								Array.from(
+									{
+										length: oversHistory[selectedOverForChange - 1].length || 1,
+									},
+									(_, index) => (
+										<option key={index} value={index + 1}>
+											{index + 1}
+										</option>
+									)
+								)}
+						</select>
+					</div>
 
-					<button className="btn btn-info" onClick={handleChangeScoreClick}>
+					<button
+						style={{ height: "41px" }}
+						className="btn-info rounded px-2"
+						onClick={handleChangeScoreClick}>
 						Change Score
 					</button>
 				</div>
