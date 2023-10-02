@@ -475,13 +475,13 @@ const ScoreCard = () => {
 
 	return (
 		<div className="container mx-auto text-center">
-			<div className="p-5 flex flex-col sm:flex-row justify-around item-top">
-				<div>
+			<div className="p-5 flex flex-col md:flex-row justify-around item-top">
+				<div style={{ flexBasis: "70%", flexGrow: 1, flexShrink: 0 }}>
 					<div className="mb-3">
-						<span className="text-[30vw] lg:text-[15vw]">
+						<span className="text-[30vw] md:text-[20vw] lg:text-[15vw]">
 							{score.runs}/{score.wickets}
 						</span>
-						<span className="text-[10vw] lg:text-[5vw]">
+						<span className="text-[10vw] md:text-[7vw] lg:text-[5vw]">
 							{score.overs}.{score.balls}
 						</span>
 					</div>
@@ -502,7 +502,7 @@ const ScoreCard = () => {
 					</div>
 				</div>
 
-				<div>
+				<div style={{ flexBasis: "30%", flexGrow: 1, flexShrink: 0 }}>
 					{renderButtons()}
 
 					<div className="grid grid-cols-2 gap-2 mt-10">
