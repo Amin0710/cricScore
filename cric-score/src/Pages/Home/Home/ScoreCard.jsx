@@ -445,10 +445,11 @@ const ScoreCard = () => {
 	const getFontSizeClass = (text) => {
 		const length = text.length;
 
-		if (length <= 2) return "text-5xl";
-		if (length <= 4) return "text-3xl";
-		if (length <= 6) return "text-md";
-		return "text-sm";
+		if (length <= 1) return "text-5xl";
+		if (length <= 2) return "text-3xl md:text-5xl";
+		if (length <= 3) return "text-xl md:text-3xl";
+		if (length <= 5) return "text-md md:text-xl";
+		return "text-xs md:text-sm";
 	};
 
 	const getButtonClass = (index, score) => {
@@ -486,25 +487,39 @@ const ScoreCard = () => {
 						</span>
 					</div>
 					<div className="flex items-center justify-around flex-wrap">
-						{ballScores.map((score, ballIndex) => {
-							const index = ballIndex;
-							return (
-								<button
-									key={ballIndex}
-									className={`w-[80px] h-[80px] border-2 border-gray-600 rounded-full overflow-hidden focus:outline-none ${getButtonClass(
-										index,
-										score
-									)} ${getFontSizeClass(ballScores[index])}`}>
-									{ballScores[index]}
-								</button>
-							);
-						})}
+						{Array(
+							6 +
+								ballScores.filter(
+									(score) => score.includes("N") || score.includes("Wd")
+								).length
+						)
+							.fill(null)
+							.map((_, ballIndex) => {
+								const score = ballScores[ballIndex];
+								if (score != null) {
+									return (
+										<button
+											key={ballIndex}
+											className={`w-[60px] h-[60px] md:w-[80px] md:h-[80px] border-2 border-gray-600 rounded-full overflow-hidden ${getButtonClass(
+												ballIndex,
+												score
+											)} ${getFontSizeClass(ballScores[ballIndex])}`}>
+											{ballScores[ballIndex]}
+										</button>
+									);
+								} else {
+									// Render placeholder
+									return (
+										<button
+											key={ballIndex}
+											className="w-[60px] h-[60px] md:w-[80px] md:h-[80px] border-2 border-gray-600 rounded-full"></button>
+									);
+								}
+							})}
 					</div>
 				</div>
-
 				<div style={{ flexBasis: "30%", flexGrow: 1, flexShrink: 0 }}>
 					{renderButtons()}
-
 					<div className="grid grid-cols-2 gap-2 mt-10">
 						<button
 							className="btn btn-outline btn-info"
