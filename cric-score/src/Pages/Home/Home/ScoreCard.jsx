@@ -3,8 +3,11 @@ import { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import "./ScoreCard.css";
 import ScoreChangePopUp from "./ScoreChangePopUp";
+import ByeLegBye from "./ByeLegBye";
 import ReactDOM from "react-dom/client";
+import ReactDOMServer from "react-dom/server";
 import ScoreboardModal from "./ScoreboardModal";
+import RunOut from "./RunOut";
 
 const ScoreCard = () => {
 	const [score, setScore] = useState({
@@ -23,7 +26,8 @@ const ScoreCard = () => {
 	const [ballNO, setBallNO] = useState([]);
 	const [selectedOverForChange, setSelectedOverForChange] = useState(0);
 	const [changeType, setChangeType] = useState("change");
-	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [byeChange, setByeChange] = useState("0");
+	const [isScoreboardOpen, setisScoreboardOpen] = useState(false);
 
 	const firstAllOutRef = useRef(true);
 	const allOutRef = useRef(false);
@@ -41,14 +45,25 @@ const ScoreCard = () => {
 		}
 	}, [score.wickets, oversHistory]);
 
-	const handleRuns = (run, wide = false, noBall = false, wicket = 0) => {
+	const handleRuns = (
+		run,
+		wide = false,
+		noBall = false,
+		wicket = 0,
+		bye = false
+	) => {
 		// Push current score to history before updating
 		setScoreHistory((prevHistory) => [...prevHistory, score]);
 		let ballDescription = [];
 
+		const isRanout = wicket > 1;
+		wicket = wicket ? 1 : 0;
+
 		if (wicket) ballDescription.push("Out");
+		if (isRanout) ballDescription.push("R");
 		if (noBall) ballDescription.push("N");
 		if (wide) ballDescription.push("Wd");
+		if (bye) ballDescription.push("B");
 		if (run === 0 && !wicket && !noBall && !wide) ballDescription.push("0");
 		if (run > 0) ballDescription.push(run.toString());
 
@@ -165,13 +180,15 @@ const ScoreCard = () => {
 					<button className="btn btn-warning" onClick={handleNoBall}>
 						No Ball
 					</button>
+					<button className="btn btn-warning" onClick={handleBye}>
+						Bye / <br />
+						Leg-bye
+					</button>
 					<button
 						className="btn btn-error"
 						onClick={() => handleRuns(0, false, false, 1)}>
 						Wicket
 					</button>
-				</div>
-				<div className="grid grid-cols-2 gap-2 mt-5">
 					<button
 						className="btn btn-error "
 						onClick={() => handleRuns(0, true, false, 1)}>
@@ -186,8 +203,13 @@ const ScoreCard = () => {
 	};
 
 	const handleNoBall = () => {
+		const textElement = ReactDOMServer.renderToString(
+			<span className="text-red-500">Do not include Bye runs</span>
+		);
+
 		Swal.fire({
-			title: "Did the batsman score any runs off the no ball?",
+			title: "Did the batsman score any runs off the no ball?(0-6)",
+			html: textElement,
 			input: "select",
 			inputOptions: {
 				0: "0",
@@ -198,52 +220,82 @@ const ScoreCard = () => {
 				6: "6",
 			},
 			confirmButtonText: "Done",
-		}).then((res) => {
-			const runsOffNoBall = isNaN(Number(res.value)) ? 0 : Number(res.value);
-			handleRuns(runsOffNoBall, false, true);
+		}).then((result) => {
+			if (result.isConfirmed) {
+				const runsOffNoBall = isNaN(Number(result.value))
+					? 0
+					: Number(result.value);
+
+				handleRuns(runsOffNoBall, false, true);
+			}
+		});
+	};
+
+	const handleBye = () => {
+		const byeLegByeHtml = ReactDOMServer.renderToString(<ByeLegBye />);
+
+		Swal.fire({
+			title: "Bye / Leg-Bye",
+			html: byeLegByeHtml,
+			confirmButtonText: "Confirm",
+			preConfirm: () => {
+				// Retrieve the selected values from the dropdowns
+				const byeRunsDropdown = document.getElementById("byeRunsDropdown").value; // prettier-ignore
+				const byeWideNoDropdown =document.getElementById("byeWideNoDropdown").value; // prettier-ignore
+
+				return {
+					runsSelected: parseInt(byeRunsDropdown, 10),
+					wideNoSelected: byeWideNoDropdown,
+				};
+			},
+		}).then((result) => {
+			if (result.isConfirmed) {
+				const { runsSelected, wideNoSelected } = result.value;
+
+				if (wideNoSelected === "wide") handleRuns(runsSelected, true, false, 0, true); // prettier-ignore
+				if (wideNoSelected === "noball") handleRuns(runsSelected, false, true, 0, true); // prettier-ignore
+
+				if (wideNoSelected != "noball" && wideNoSelected != "wide")
+					handleRuns(runsSelected, false, false, 0, true);
+			}
 		});
 	};
 
 	const handleRunout = () => {
+		const runOutHtml = ReactDOMServer.renderToString(<RunOut />);
+
 		Swal.fire({
-			title: "New batsman in is the keeper side?",
-			showDenyButton: true,
-			confirmButtonText: "Yes, Keeper side",
-			denyButtonText: `No, Bowler side`,
-		}).then(() => {
-			Swal.fire({
-				title: "Is that a No Ball?",
-				showDenyButton: true,
-				confirmButtonText: "Vaild Ball",
-				denyButtonText: `No Ball`,
-			}).then((result) => {
-				Swal.fire({
-					title: "Did they successfully complete any run?",
-					input: "select",
-					inputOptions: {
-						0: "0",
-						1: "1",
-						2: "2",
-						3: "3",
-					},
-					confirmButtonText: "Done",
-				}).then((res) => {
-					const runCompletedBeforeRunOut = isNaN(Number(res.value))
-						? 0
-						: Number(res.value);
-					if (result.isConfirmed) {
-						handleRuns(0 + runCompletedBeforeRunOut, false, false, 1);
-					} else if (result.isDenied) {
-						handleRuns(0 + runCompletedBeforeRunOut, false, true, 1);
-					}
-				});
-			});
+			title: "Run Out details",
+			html: runOutHtml,
+			confirmButtonText: "Confirm",
+			preConfirm: () => {
+				// Retrieve the selected values from the dropdowns
+				const runoutRunsDropdown = document.getElementById("runoutRunsDropdown").value; // prettier-ignore
+				const runoutWideNoDropdown =document.getElementById("runoutWideNoDropdown").value; // prettier-ignore
+				const runoutByeDropdown =document.getElementById("runoutByeDropdown").value; // prettier-ignore
+
+				return {
+					runsSelected: parseInt(runoutRunsDropdown, 10),
+					wideNoSelected: runoutWideNoDropdown,
+					byeSelected: runoutByeDropdown === "bye",
+				};
+			},
+		}).then((result) => {
+			if (result.isConfirmed) {
+				const { runsSelected, wideNoSelected, byeSelected } = result.value;
+
+				if (wideNoSelected === "wide") handleRuns(runsSelected, true, false, 2, byeSelected); // prettier-ignore
+				if (wideNoSelected === "noball") handleRuns(runsSelected, false, true, 2, byeSelected); // prettier-ignore
+
+				if (wideNoSelected != "noball" && wideNoSelected != "wide")
+					handleRuns(runsSelected, false, false, 2, byeSelected);
+			}
 		});
 	};
 
 	const showScoreboard = () => {
 		setSelectedOverForChange("");
-		setIsModalOpen(true);
+		setisScoreboardOpen(true);
 	};
 
 	function extractRunsFromBall(ballToChange) {
@@ -292,21 +344,46 @@ const ScoreCard = () => {
 						ballToChangeIsExtra={ballToChangeIsExtra}
 						over={over}
 						ball={ball}
+						bye={byeChange}
 						changeType={event.target.value} // Use the new value directly
 						handleTypeChange={handleTypeChange}
+						handleByeChange={handleByeChange}
 					/>
 				);
 				Swal.update({
 					html: swalContent,
 				});
 			};
+
+			const handleByeChange = (event) => {
+				setByeChange(event.target.value);
+
+				// Force re-render of the ScoreChangePopUp component inside the Swal modal
+				root.render(
+					<ScoreChangePopUp
+						ballToChangeIsExtra={ballToChangeIsExtra}
+						over={over}
+						ball={ball}
+						bye={event.target.value} // Use the new value directly
+						changeType={changeType}
+						handleTypeChange={handleTypeChange}
+						handleByeChange={handleByeChange}
+					/>
+				);
+				Swal.update({
+					html: swalContent,
+				});
+			};
+
 			root.render(
 				<ScoreChangePopUp
 					ballToChangeIsExtra={ballToChangeIsExtra}
 					over={over}
 					ball={ball}
+					bye={byeChange}
 					changeType={changeType}
 					handleTypeChange={handleTypeChange}
+					handleByeChange={handleByeChange}
 				/>
 			);
 			Swal.fire({
@@ -319,12 +396,14 @@ const ScoreCard = () => {
 					const runsDropdownValue =document.getElementById("runsDropdown").value; // prettier-ignore
 					const wideNoDropdownValue =document.getElementById("wideNoDropdown").value; // prettier-ignore
 					const wicketDropdownValue =document.getElementById("wicketDropdown").value; // prettier-ignore
+					const changeByeDropdownValue =document.getElementById("changeByeDropdown").value; // prettier-ignore
 
 					return {
 						changeTypeSelected: changeTypeValue,
 						runsSelected: parseInt(runsDropdownValue, 10),
 						wideNoSelected: wideNoDropdownValue,
 						wicketSelected: parseInt(wicketDropdownValue, 10),
+						byeSelected: changeByeDropdownValue,
 					};
 				},
 			}).then((result) => {
@@ -334,12 +413,15 @@ const ScoreCard = () => {
 						runsSelected,
 						wideNoSelected,
 						wicketSelected,
+						byeSelected,
 					} = result.value;
 					// Construct the new score string based on the selected values
 					let newScore = [];
 					if (wicketSelected) newScore.push("Out");
+					if (wicketSelected > 1) newScore.push("R");
 					if (wideNoSelected === "noball") newScore.push("N");
 					if (wideNoSelected === "wide") newScore.push("Wd");
+					if (byeSelected === "bye") newScore.push("B");
 					if (
 						runsSelected === 0 &&
 						!wicketSelected &&
@@ -388,6 +470,7 @@ const ScoreCard = () => {
 					setSelectedOverForChange("");
 					document.getElementById("changeBallInput").value = "";
 					setChangeType("change");
+					setByeChange("0");
 				}
 			});
 		}
@@ -478,7 +561,7 @@ const ScoreCard = () => {
 
 	return (
 		<div className="container mx-auto text-center">
-			<div className="p-5 flex flex-col md:flex-row justify-around item-top">
+			<div className="p-1 flex flex-col md:flex-row justify-around item-top">
 				<div style={{ flexBasis: "70%", flexGrow: 1, flexShrink: 0 }}>
 					<div className="mb-3">
 						<span className="text-[30vw] md:text-[20vw] lg:text-[15vw]">
@@ -534,21 +617,9 @@ const ScoreCard = () => {
 					</div>
 				</div>
 			</div>
-			<div>
-				{oversHistory.map((overScores, overIndex) => (
-					<div key={overIndex}>
-						<h3>Over {overIndex + 1}</h3>
-						<div className="flex items-center justify-around flex-wrap text-xl">
-							{overScores.map((score, ballIndex) => (
-								<span key={ballIndex}>{score}</span>
-							))}
-						</div>
-					</div>
-				))}
-			</div>
 			<ScoreboardModal
-				isOpen={isModalOpen}
-				onRequestClose={() => setIsModalOpen(false)}
+				isOpen={isScoreboardOpen}
+				onRequestClose={() => setisScoreboardOpen(false)}
 				oversHistory={oversHistory}
 				handleChangeScoreClick={handleChangeScoreClick}
 				setSelectedOverForChange={setSelectedOverForChange}

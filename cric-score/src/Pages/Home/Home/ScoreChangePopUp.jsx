@@ -2,9 +2,11 @@
 const ScoreChangePopUp = ({
 	over,
 	ball,
+	bye,
 	ballToChangeIsExtra,
 	changeType,
 	handleTypeChange,
+	handleByeChange,
 }) => {
 	return (
 		<div>
@@ -47,19 +49,34 @@ const ScoreChangePopUp = ({
 			<table className="min-w-full border-collapse">
 				<thead>
 					<tr>
+						<th className="border p-1">Bye?</th>
 						<th className="border p-1">Runs</th>
-						<th className="border p-1">Wide/NO</th>
-						<th className="border p-1">Wicket</th>
+						<th className="border p-1">Wide/NO?</th>
+						<th className="border p-1">Wicket?</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr>
 						<td className="border p-1">
 							<select
+								id="changeByeDropdown"
+								value={bye}
+								onChange={handleByeChange}
+								className="dropdown bg-gray-200 p-1 m-1 rounded">
+								<option value="0">No</option>
+								<option value="bye">Yes, Bye</option>
+							</select>
+						</td>
+						<td className="border p-1">
+							<select
 								id="runsDropdown"
 								className="dropdown bg-gray-200 p-1 m-1 rounded">
-								<option value="0">0</option>
-								<option value="1">1</option>
+								<option value="0" disabled={bye === "bye"}>
+									0
+								</option>
+								<option value="1" selected={bye === "bye"}>
+									1
+								</option>
 								<option value="2">2</option>
 								<option value="3">3</option>
 								<option value="4">4</option>
@@ -103,7 +120,7 @@ const ScoreChangePopUp = ({
 								className="dropdown bg-gray-200 p-1 m-1 rounded">
 								<option value="0">NO Wicket</option>
 								<option value="1">OUT</option>
-								{/* <option value="2">Run OUT</option> */}
+								<option value="2">Run OUT</option>
 							</select>
 						</td>
 					</tr>
