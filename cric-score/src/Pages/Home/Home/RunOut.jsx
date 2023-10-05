@@ -1,4 +1,4 @@
-const RunOut = () => {
+const RunOut = (runoutBye, handleRunoutByeChange) => {
 	return (
 		<div>
 			<h1>
@@ -46,6 +46,8 @@ const RunOut = () => {
 						<td className="border p-1">
 							<select
 								id="runoutByeDropdown"
+								value={runoutBye}
+								onChange={handleRunoutByeChange}
 								className="dropdown bg-gray-200 p-1 m-1 rounded">
 								<option value="0">No</option>
 								<option value="bye">Yes, Bye</option>
@@ -55,8 +57,12 @@ const RunOut = () => {
 							<select
 								id="runoutRunsDropdown"
 								className="dropdown bg-gray-200 p-1 m-1 rounded">
-								<option value="0">0</option>
-								<option value="1">1</option>
+								<option value="0" disabled={runoutBye === "bye"}>
+									0
+								</option>
+								<option value="1" selected={runoutBye === "bye"}>
+									1
+								</option>
 								<option value="2">2</option>
 								<option value="3">3</option>
 								<option value="4">4</option>

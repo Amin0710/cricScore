@@ -27,6 +27,7 @@ const ScoreCard = () => {
 	const [selectedOverForChange, setSelectedOverForChange] = useState(0);
 	const [changeType, setChangeType] = useState("change");
 	const [byeChange, setByeChange] = useState("0");
+	const [runoutBye, setRunoutBye] = useState("0");
 	const [isScoreboardOpen, setisScoreboardOpen] = useState(false);
 
 	const firstAllOutRef = useRef(true);
@@ -262,11 +263,37 @@ const ScoreCard = () => {
 	};
 
 	const handleRunout = () => {
-		const runOutHtml = ReactDOMServer.renderToString(<RunOut />);
+		// Create a DOM container for the React component
+		const swalContent = document.createElement("div");
+
+		// Use createRoot for rendering
+		const root = ReactDOM.createRoot(swalContent);
+
+		const handleRunoutByeChange = (event) => {
+			setRunoutBye(event.target.value);
+
+			// Force re-render of the RunOut component inside the Swal modal
+			root.render(
+				<RunOut
+					runoutBye={event.target.value} // Use the new value directly
+					handleRunoutByeChange={handleRunoutByeChange}
+				/>
+			);
+			Swal.update({
+				html: swalContent,
+			});
+		};
+
+		root.render(
+			<RunOut
+				runoutBye={runoutBye} // Use the new value directly
+				handleRunoutByeChange={handleRunoutByeChange}
+			/>
+		);
 
 		Swal.fire({
 			title: "Run Out details",
-			html: runOutHtml,
+			html: swalContent,
 			confirmButtonText: "Confirm",
 			preConfirm: () => {
 				// Retrieve the selected values from the dropdowns
@@ -289,6 +316,8 @@ const ScoreCard = () => {
 
 				if (wideNoSelected != "noball" && wideNoSelected != "wide")
 					handleRuns(runsSelected, false, false, 2, byeSelected);
+
+				setRunoutBye("0");
 			}
 		});
 	};
