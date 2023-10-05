@@ -335,8 +335,12 @@ const ScoreCard = () => {
 			// Use createRoot for rendering
 			const root = ReactDOM.createRoot(swalContent);
 
-			const handleTypeChange = (event) => {
-				setChangeType(event.target.value);
+			const handleInputChange = (event, type) => {
+				if (type === "changeType") {
+					setChangeType(event.target.value);
+				} else if (type === "bye") {
+					setByeChange(event.target.value);
+				}
 
 				// Force re-render of the ScoreChangePopUp component inside the Swal modal
 				root.render(
@@ -344,8 +348,8 @@ const ScoreCard = () => {
 						ballToChangeIsExtra={ballToChangeIsExtra}
 						over={over}
 						ball={ball}
-						bye={byeChange}
-						changeType={event.target.value} // Use the new value directly
+						bye={type === "bye" ? event.target.value : byeChange}
+						changeType={type === "changeType" ? event.target.value : changeType}
 						handleTypeChange={handleTypeChange}
 						handleByeChange={handleByeChange}
 					/>
@@ -355,24 +359,12 @@ const ScoreCard = () => {
 				});
 			};
 
-			const handleByeChange = (event) => {
-				setByeChange(event.target.value);
+			const handleTypeChange = (event) => {
+				handleInputChange(event, "changeType");
+			};
 
-				// Force re-render of the ScoreChangePopUp component inside the Swal modal
-				root.render(
-					<ScoreChangePopUp
-						ballToChangeIsExtra={ballToChangeIsExtra}
-						over={over}
-						ball={ball}
-						bye={event.target.value} // Use the new value directly
-						changeType={changeType}
-						handleTypeChange={handleTypeChange}
-						handleByeChange={handleByeChange}
-					/>
-				);
-				Swal.update({
-					html: swalContent,
-				});
+			const handleByeChange = (event) => {
+				handleInputChange(event, "bye");
 			};
 
 			root.render(
