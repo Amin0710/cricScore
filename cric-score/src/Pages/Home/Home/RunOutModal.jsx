@@ -7,20 +7,14 @@ const RunOutModal = ({
 	handleRunoutByeChange,
 	handleConfirmRunout,
 }) => {
-	const handleOutsideClick = (event) => {
-		if (event.target === event.currentTarget) {
-			onRequestClose();
-		}
-	};
 	return (
 		<Modal
 			isOpen={isOpen}
 			onRequestClose={onRequestClose}
 			ariaHideApp={false}
-			className="flex items-center justify-center"
-			style={{ overlay: { backgroundColor: "rgba(0, 0, 0, 0.9)" } }}
-			onClick={handleOutsideClick}>
-			<div className="mt-5 mx-2 bg-white rounded text-black p-4 max-w-xl border-red-600">
+			className="flex items-center justify-center border border-red-600"
+			style={{ overlay: { backgroundColor: "rgba(0, 0, 0, 0.4)" } }}>
+			<div className="mt-5 mx-2 bg-white rounded text-black p-4 ">
 				<h1 className="text-4xl text-center text-gray-800 mb-3">
 					Runout Details
 				</h1>

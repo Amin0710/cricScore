@@ -553,72 +553,74 @@ const ScoreCard = () => {
 	};
 
 	return (
-		<div className="container mx-auto text-center">
-			<div className="p-1 flex flex-col md:flex-row justify-around item-top">
-				<div style={{ flexBasis: "70%", flexGrow: 1, flexShrink: 0 }}>
-					<div className="mb-3">
-						<span className="text-[30vw] md:text-[20vw] lg:text-[15vw]">
-							{score.runs}/{score.wickets}
-						</span>
-						<span className="text-[10vw] md:text-[7vw] lg:text-[5vw]">
-							{score.overs}.{score.balls}
-						</span>
+		<div>
+			<div className="container mx-auto text-center">
+				<div className="p-1 flex flex-col md:flex-row justify-around item-top">
+					<div style={{ flexBasis: "70%", flexGrow: 1, flexShrink: 0 }}>
+						<div className="mb-3">
+							<span className="text-[30vw] md:text-[20vw] lg:text-[15vw]">
+								{score.runs}/{score.wickets}
+							</span>
+							<span className="text-[10vw] md:text-[7vw] lg:text-[5vw]">
+								{score.overs}.{score.balls}
+							</span>
+						</div>
+						<div className="flex items-center justify-around flex-wrap">
+							{Array(
+								6 +
+									ballScores.filter(
+										(score) => score.includes("N") || score.includes("Wd")
+									).length
+							)
+								.fill(null)
+								.map((_, ballIndex) => {
+									const score = ballScores[ballIndex];
+									if (score != null) {
+										return (
+											<button
+												key={ballIndex}
+												className={`w-[60px] h-[60px] md:w-[80px] md:h-[80px] border-2 border-gray-600 rounded-full overflow-hidden ${getButtonClass(
+													ballIndex,
+													score
+												)} ${getFontSizeClass(ballScores[ballIndex])}`}>
+												{ballScores[ballIndex]}
+											</button>
+										);
+									} else {
+										// Render placeholder
+										return (
+											<button
+												key={ballIndex}
+												className="w-[60px] h-[60px] md:w-[80px] md:h-[80px] border-2 border-gray-600 rounded-full"></button>
+										);
+									}
+								})}
+						</div>
 					</div>
-					<div className="flex items-center justify-around flex-wrap">
-						{Array(
-							6 +
-								ballScores.filter(
-									(score) => score.includes("N") || score.includes("Wd")
-								).length
-						)
-							.fill(null)
-							.map((_, ballIndex) => {
-								const score = ballScores[ballIndex];
-								if (score != null) {
-									return (
-										<button
-											key={ballIndex}
-											className={`w-[60px] h-[60px] md:w-[80px] md:h-[80px] border-2 border-gray-600 rounded-full overflow-hidden ${getButtonClass(
-												ballIndex,
-												score
-											)} ${getFontSizeClass(ballScores[ballIndex])}`}>
-											{ballScores[ballIndex]}
-										</button>
-									);
-								} else {
-									// Render placeholder
-									return (
-										<button
-											key={ballIndex}
-											className="w-[60px] h-[60px] md:w-[80px] md:h-[80px] border-2 border-gray-600 rounded-full"></button>
-									);
-								}
-							})}
-					</div>
-				</div>
-				<div style={{ flexBasis: "30%", flexGrow: 1, flexShrink: 0 }}>
-					{renderButtons()}
-					<div className="grid grid-cols-2 gap-2 mt-10">
-						<button
-							className="btn btn-outline btn-info"
-							onClick={showScoreboard}>
-							Scoreboard
-						</button>
-						<button className="btn btn-outline btn-error" onClick={handleUndo}>
-							Undo
-						</button>
+					<div style={{ flexBasis: "30%", flexGrow: 1, flexShrink: 0 }}>
+						{renderButtons()}
+						<div className="grid grid-cols-2 gap-2 mt-10">
+							<button
+								className="btn btn-outline btn-info"
+								onClick={showScoreboard}>
+								Scoreboard
+							</button>
+							<button
+								className="btn btn-outline btn-error"
+								onClick={handleUndo}>
+								Undo
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
 
-			{isRunoutModalOpen && (
-				<RunOutModal
-					isOpen={isRunoutModalOpen}
-					onRequestClose={() => setIsRunoutModalOpen(false)}
-					runoutBye={runoutBye}
-					handleRunoutByeChange={handleRunoutByeChange}
-					handleConfirmRunout={handleConfirmRunout}></RunOutModal>
-			)}
+			<RunOutModal
+				isOpen={isRunoutModalOpen}
+				onRequestClose={() => setIsRunoutModalOpen(false)}
+				runoutBye={runoutBye}
+				handleRunoutByeChange={handleRunoutByeChange}
+				handleConfirmRunout={handleConfirmRunout}></RunOutModal>
 
 			<ScoreboardModal
 				isOpen={isScoreboardOpen}
