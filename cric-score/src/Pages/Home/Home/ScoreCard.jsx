@@ -30,6 +30,7 @@ const ScoreCard = () => {
 	const [runoutBye, setRunoutBye] = useState("0");
 	const [isScoreboardOpen, setisScoreboardOpen] = useState(false);
 	const [isRunoutModalOpen, setIsRunoutModalOpen] = useState(false);
+	const [activeNewBatsmanSide, setActiveNewBatsmanSide] = useState("");
 
 	const firstAllOutRef = useRef(true);
 	const allOutRef = useRef(false);
@@ -52,7 +53,8 @@ const ScoreCard = () => {
 		wide = false,
 		noBall = false,
 		wicket = 0,
-		bye = false
+		bye = false,
+		newBatsmanSide = ""
 	) => {
 		// Push current score to history before updating
 		setScoreHistory((prevHistory) => [...prevHistory, score]);
@@ -62,7 +64,8 @@ const ScoreCard = () => {
 		wicket = wicket ? 1 : 0;
 
 		if (wicket) ballDescription.push("Out");
-		if (isRanout) ballDescription.push("R");
+		if (isRanout && newBatsmanSide === "keeperSide") ballDescription.push("Rk");
+		if (isRanout && newBatsmanSide === "bowlerSide") ballDescription.push("Rb");
 		if (noBall) ballDescription.push("N");
 		if (wide) ballDescription.push("Wd");
 		if (bye) ballDescription.push("B");
@@ -446,27 +449,32 @@ const ScoreCard = () => {
 	};
 
 	const handleConfirmRunout = () => {
-		// if (!over || !ball) {
-		// 	Swal.fire("Error", "Please enter both over and ball numbers.", "error");
-		// 	return;
-		// }
+		if (!activeNewBatsmanSide) {
+			Swal.fire(
+				"Error",
+				"Please select which side did the new batsman arrive on.",
+				"error"
+			);
+			return;
+		} else {
+			const runoutRunsDropdown = document.getElementById("runoutRunsDropdown").value; // prettier-ignore
+			const runoutWideNoDropdown =document.getElementById("runoutWideNoDropdown").value; // prettier-ignore
+			const runoutByeDropdown =document.getElementById("runoutByeDropdown").value; // prettier-ignore
 
-		const runoutRunsDropdown = document.getElementById("runoutRunsDropdown").value; // prettier-ignore
-		const runoutWideNoDropdown =document.getElementById("runoutWideNoDropdown").value; // prettier-ignore
-		const runoutByeDropdown =document.getElementById("runoutByeDropdown").value; // prettier-ignore
+			const runsSelected = parseInt(runoutRunsDropdown, 10);
+			const wideNoSelected = runoutWideNoDropdown;
+			const byeSelected = runoutByeDropdown === "bye";
 
-		const runsSelected = parseInt(runoutRunsDropdown, 10);
-		const wideNoSelected = runoutWideNoDropdown;
-		const byeSelected = runoutByeDropdown === "bye";
+			if (wideNoSelected === "wide") handleRuns(runsSelected, true, false, 2, byeSelected,activeNewBatsmanSide); // prettier-ignore
+			if (wideNoSelected === "noball") handleRuns(runsSelected, false, true, 2, byeSelected,activeNewBatsmanSide); // prettier-ignore
 
-		if (wideNoSelected === "wide") handleRuns(runsSelected, true, false, 2, byeSelected); // prettier-ignore
-		if (wideNoSelected === "noball") handleRuns(runsSelected, false, true, 2, byeSelected); // prettier-ignore
+			if (wideNoSelected != "noball" && wideNoSelected != "wide")
+				handleRuns(runsSelected, false, false, 2, byeSelected,activeNewBatsmanSide); // prettier-ignore
 
-		if (wideNoSelected != "noball" && wideNoSelected != "wide")
-			handleRuns(runsSelected, false, false, 2, byeSelected);
-
-		setRunoutBye("0");
-		setIsRunoutModalOpen(false);
+			setRunoutBye("0");
+			setIsRunoutModalOpen(false);
+			setActiveNewBatsmanSide("");
+		}
 	};
 
 	const handleUndo = () => {
@@ -620,7 +628,9 @@ const ScoreCard = () => {
 				onRequestClose={() => setIsRunoutModalOpen(false)}
 				runoutBye={runoutBye}
 				handleRunoutByeChange={handleRunoutByeChange}
-				handleConfirmRunout={handleConfirmRunout}></RunOutModal>
+				handleConfirmRunout={handleConfirmRunout}
+				activeNewBatsmanSide={activeNewBatsmanSide}
+				setActiveNewBatsmanSide={setActiveNewBatsmanSide}></RunOutModal>
 
 			<ScoreboardModal
 				isOpen={isScoreboardOpen}
