@@ -77,7 +77,7 @@ const ScoreboardModal = ({
 
 					<button
 						style={{ height: "41px" }}
-						className="btn-info rounded px-2"
+						className="btn text-white bg-[#655CC9] border-0 rounded px-2"
 						onClick={handleChangeScoreClick}>
 						Change Score
 					</button>

@@ -7,7 +7,7 @@ import ByeLegBye from "./ByeLegBye";
 import ReactDOM from "react-dom/client";
 import ReactDOMServer from "react-dom/server";
 import ScoreboardModal from "./ScoreboardModal";
-import RunOut from "./RunOut";
+import RunOutModal from "./RunOutModal";
 
 const ScoreCard = () => {
 	const [score, setScore] = useState({
@@ -29,6 +29,7 @@ const ScoreCard = () => {
 	const [byeChange, setByeChange] = useState("0");
 	const [runoutBye, setRunoutBye] = useState("0");
 	const [isScoreboardOpen, setisScoreboardOpen] = useState(false);
+	const [isRunoutModalOpen, setIsRunoutModalOpen] = useState(false);
 
 	const firstAllOutRef = useRef(true);
 	const allOutRef = useRef(false);
@@ -263,64 +264,11 @@ const ScoreCard = () => {
 	};
 
 	const handleRunout = () => {
-		// Create a DOM container for the React component
-		const swalContent = document.createElement("div");
-
-		// Use createRoot for rendering
-		const root = ReactDOM.createRoot(swalContent);
-
-		const handleRunoutByeChange = (event) => {
-			setRunoutBye(event.target.value);
-
-			// Force re-render of the RunOut component inside the Swal modal
-			root.render(
-				<RunOut
-					runoutBye={event.target.value} // Use the new value directly
-					handleRunoutByeChange={handleRunoutByeChange}
-				/>
-			);
-			Swal.update({
-				html: swalContent,
-			});
-		};
-
-		root.render(
-			<RunOut
-				runoutBye={runoutBye} // Use the new value directly
-				handleRunoutByeChange={handleRunoutByeChange}
-			/>
-		);
-
-		Swal.fire({
-			title: "Run Out details",
-			html: swalContent,
-			confirmButtonText: "Confirm",
-			preConfirm: () => {
-				// Retrieve the selected values from the dropdowns
-				const runoutRunsDropdown = document.getElementById("runoutRunsDropdown").value; // prettier-ignore
-				const runoutWideNoDropdown =document.getElementById("runoutWideNoDropdown").value; // prettier-ignore
-				const runoutByeDropdown =document.getElementById("runoutByeDropdown").value; // prettier-ignore
-
-				return {
-					runsSelected: parseInt(runoutRunsDropdown, 10),
-					wideNoSelected: runoutWideNoDropdown,
-					byeSelected: runoutByeDropdown === "bye",
-				};
-			},
-		}).then((result) => {
-			if (result.isConfirmed) {
-				const { runsSelected, wideNoSelected, byeSelected } = result.value;
-
-				if (wideNoSelected === "wide") handleRuns(runsSelected, true, false, 2, byeSelected); // prettier-ignore
-				if (wideNoSelected === "noball") handleRuns(runsSelected, false, true, 2, byeSelected); // prettier-ignore
-
-				if (wideNoSelected != "noball" && wideNoSelected != "wide")
-					handleRuns(runsSelected, false, false, 2, byeSelected);
-
-				setRunoutBye("0");
-			}
-		});
+		setIsRunoutModalOpen(true);
 	};
+	function handleRunoutByeChange(event) {
+		setRunoutBye(event.target.value);
+	}
 
 	const showScoreboard = () => {
 		setSelectedOverForChange("");
@@ -497,6 +445,30 @@ const ScoreCard = () => {
 		}
 	};
 
+	const handleConfirmRunout = () => {
+		// if (!over || !ball) {
+		// 	Swal.fire("Error", "Please enter both over and ball numbers.", "error");
+		// 	return;
+		// }
+
+		const runoutRunsDropdown = document.getElementById("runoutRunsDropdown").value; // prettier-ignore
+		const runoutWideNoDropdown =document.getElementById("runoutWideNoDropdown").value; // prettier-ignore
+		const runoutByeDropdown =document.getElementById("runoutByeDropdown").value; // prettier-ignore
+
+		const runsSelected = parseInt(runoutRunsDropdown, 10);
+		const wideNoSelected = runoutWideNoDropdown;
+		const byeSelected = runoutByeDropdown === "bye";
+
+		if (wideNoSelected === "wide") handleRuns(runsSelected, true, false, 2, byeSelected); // prettier-ignore
+		if (wideNoSelected === "noball") handleRuns(runsSelected, false, true, 2, byeSelected); // prettier-ignore
+
+		if (wideNoSelected != "noball" && wideNoSelected != "wide")
+			handleRuns(runsSelected, false, false, 2, byeSelected);
+
+		setRunoutBye("0");
+		setIsRunoutModalOpen(false);
+	};
+
 	const handleUndo = () => {
 		Swal.fire({
 			title: "Are you sure you want to undo?",
@@ -638,14 +610,23 @@ const ScoreCard = () => {
 					</div>
 				</div>
 			</div>
+
+			{isRunoutModalOpen && (
+				<RunOutModal
+					isOpen={isRunoutModalOpen}
+					onRequestClose={() => setIsRunoutModalOpen(false)}
+					runoutBye={runoutBye}
+					handleRunoutByeChange={handleRunoutByeChange}
+					handleConfirmRunout={handleConfirmRunout}></RunOutModal>
+			)}
+
 			<ScoreboardModal
 				isOpen={isScoreboardOpen}
 				onRequestClose={() => setisScoreboardOpen(false)}
 				oversHistory={oversHistory}
 				handleChangeScoreClick={handleChangeScoreClick}
 				setSelectedOverForChange={setSelectedOverForChange}
-				selectedOverForChange={selectedOverForChange}
-			/>
+				selectedOverForChange={selectedOverForChange}></ScoreboardModal>
 		</div>
 	);
 };
