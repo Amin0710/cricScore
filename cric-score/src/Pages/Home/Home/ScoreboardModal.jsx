@@ -34,7 +34,14 @@ const ScoreboardModal = ({
 									<tr key={overIndex} className={`${bgColorClass}`}>
 										<td className="border p-2  w-1/4">Over {overIndex + 1}</td>
 										<td className="border p-2  w-3/4">
-											{overScores.join(" - ")}
+											{overScores.map((score, index) => (
+												<span key={index}>
+													{index > 0 && (
+														<span className="text-red-700 font-bold"> - </span>
+													)}
+													{score}
+												</span>
+											))}
 										</td>
 									</tr>
 								);

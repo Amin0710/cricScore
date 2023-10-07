@@ -74,6 +74,7 @@ const ScoreCard = () => {
 		if (run > 0) ballDescription.push(run.toString());
 
 		setBallScores((prevScores) => [...prevScores, ballDescription.join("+")]);
+
 		if (score.wickets >= 10) {
 			ballScores.pop();
 		}
