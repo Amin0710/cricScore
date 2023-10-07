@@ -31,6 +31,7 @@ const ScoreCard = () => {
 	const [isScoreboardOpen, setisScoreboardOpen] = useState(false);
 	const [isRunoutModalOpen, setIsRunoutModalOpen] = useState(false);
 	const [activeNewBatsmanSide, setActiveNewBatsmanSide] = useState("");
+	const [selectedBallIndex, setSelectedBallIndex] = useState(null);
 
 	const firstAllOutRef = useRef(true);
 	const allOutRef = useRef(false);
@@ -565,14 +566,28 @@ const ScoreCard = () => {
 			<div className="container mx-auto text-center">
 				<div className="p-1 flex flex-col md:flex-row justify-around item-top">
 					<div style={{ flexBasis: "70%", flexGrow: 1, flexShrink: 0 }}>
-						<div className="mb-3">
+						<div className="relative">
 							<span className="text-[30vw] md:text-[20vw] lg:text-[15vw]">
 								{score.runs}/{score.wickets}
 							</span>
 							<span className="text-[10vw] md:text-[7vw] lg:text-[5vw]">
 								{score.overs}.{score.balls}
 							</span>
+							<div className="flex justify-center">
+								<h1
+									className={`absolute bottom-0 md:bottom-5 max-h-10 text-white text-justify px-2 rounded-md ${
+										selectedBallIndex !== null
+											? "bg-blue-500 border border-white"
+											: ""
+									}`}
+									onClick={() => {
+										setSelectedBallIndex(null);
+									}}>
+									{selectedBallIndex !== null && ballScores[selectedBallIndex]}
+								</h1>
+							</div>
 						</div>
+
 						<div className="flex items-center justify-around flex-wrap">
 							{Array(
 								6 +
@@ -590,7 +605,14 @@ const ScoreCard = () => {
 												className={`w-[60px] h-[60px] md:w-[80px] md:h-[80px] border-2 border-gray-600 rounded-full overflow-hidden ${getButtonClass(
 													ballIndex,
 													score
-												)} ${getFontSizeClass(ballScores[ballIndex])}`}>
+												)} ${getFontSizeClass(ballScores[ballIndex])}`}
+												onClick={() => {
+													if (selectedBallIndex === ballIndex) {
+														setSelectedBallIndex(null); // Toggle off if already selected
+													} else {
+														setSelectedBallIndex(ballIndex);
+													}
+												}}>
 												{ballScores[ballIndex]}
 											</button>
 										);
