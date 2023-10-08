@@ -16,7 +16,7 @@ const ScoreboardModal = ({
 			ariaHideApp={false}
 			className="flex items-center justify-center"
 			style={{ overlay: { backgroundColor: "rgba(0, 0, 0, 0.9)" } }}>
-			<div className="mt-5 mx-2 bg-white rounded text-black p-4 max-w-xl w-full">
+			<div className="mt-5 mx-2 bg-white rounded text-black p-4">
 				<h1 className="text-4xl text-center text-gray-800 mb-3">Scoreboard</h1>
 				<div className="max-h-[60vh] overflow-y-auto">
 					<table className="min-w-full border-collapse">
@@ -34,7 +34,14 @@ const ScoreboardModal = ({
 									<tr key={overIndex} className={`${bgColorClass}`}>
 										<td className="border p-2  w-1/4">Over {overIndex + 1}</td>
 										<td className="border p-2  w-3/4">
-											{overScores.join(" - ")}
+											{overScores.map((score, index) => (
+												<span key={index}>
+													{index > 0 && (
+														<span className="text-red-700 font-bold"> - </span>
+													)}
+													{score}
+												</span>
+											))}
 										</td>
 									</tr>
 								);
@@ -77,7 +84,7 @@ const ScoreboardModal = ({
 
 					<button
 						style={{ height: "41px" }}
-						className="btn-info rounded px-2"
+						className="btn text-white bg-[#655CC9] border-0 rounded px-2"
 						onClick={handleChangeScoreClick}>
 						Change Score
 					</button>

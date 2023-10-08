@@ -7,7 +7,7 @@ import ByeLegBye from "./ByeLegBye";
 import ReactDOM from "react-dom/client";
 import ReactDOMServer from "react-dom/server";
 import ScoreboardModal from "./ScoreboardModal";
-import RunOut from "./RunOut";
+import RunOutModal from "./RunOutModal";
 
 const ScoreCard = () => {
 	const [score, setScore] = useState({
@@ -27,7 +27,11 @@ const ScoreCard = () => {
 	const [selectedOverForChange, setSelectedOverForChange] = useState(0);
 	const [changeType, setChangeType] = useState("change");
 	const [byeChange, setByeChange] = useState("0");
+	const [runoutBye, setRunoutBye] = useState("0");
 	const [isScoreboardOpen, setisScoreboardOpen] = useState(false);
+	const [isRunoutModalOpen, setIsRunoutModalOpen] = useState(false);
+	const [activeNewBatsmanSide, setActiveNewBatsmanSide] = useState("");
+	const [selectedBallIndex, setSelectedBallIndex] = useState(null);
 
 	const firstAllOutRef = useRef(true);
 	const allOutRef = useRef(false);
@@ -50,8 +54,16 @@ const ScoreCard = () => {
 		wide = false,
 		noBall = false,
 		wicket = 0,
-		bye = false
+		bye = false,
+		newBatsmanSide = ""
 	) => {
+		if (score.balls === 0) {
+			setBallScores([]);
+			setBallWicket([]);
+			setBallWide([]);
+			setBallNO([]);
+		}
+		setSelectedBallIndex(null);
 		// Push current score to history before updating
 		setScoreHistory((prevHistory) => [...prevHistory, score]);
 		let ballDescription = [];
@@ -60,7 +72,8 @@ const ScoreCard = () => {
 		wicket = wicket ? 1 : 0;
 
 		if (wicket) ballDescription.push("Out");
-		if (isRanout) ballDescription.push("R");
+		if (isRanout && newBatsmanSide === "keeperSide") ballDescription.push("Rk");
+		if (isRanout && newBatsmanSide === "bowlerSide") ballDescription.push("Rb");
 		if (noBall) ballDescription.push("N");
 		if (wide) ballDescription.push("Wd");
 		if (bye) ballDescription.push("B");
@@ -68,6 +81,7 @@ const ScoreCard = () => {
 		if (run > 0) ballDescription.push(run.toString());
 
 		setBallScores((prevScores) => [...prevScores, ballDescription.join("+")]);
+
 		if (score.wickets >= 10) {
 			ballScores.pop();
 		}
@@ -132,10 +146,6 @@ const ScoreCard = () => {
 				[...ballScores, ballDescription.join("+")],
 			];
 			setOversHistory(updatedOvers);
-			setBallScores([]);
-			setBallWicket([]);
-			setBallWide([]);
-			setBallNO([]);
 			allOutRef.current = false; // Reset the ref when a new over starts
 		}
 	};
@@ -262,38 +272,14 @@ const ScoreCard = () => {
 	};
 
 	const handleRunout = () => {
-		const runOutHtml = ReactDOMServer.renderToString(<RunOut />);
-
-		Swal.fire({
-			title: "Run Out details",
-			html: runOutHtml,
-			confirmButtonText: "Confirm",
-			preConfirm: () => {
-				// Retrieve the selected values from the dropdowns
-				const runoutRunsDropdown = document.getElementById("runoutRunsDropdown").value; // prettier-ignore
-				const runoutWideNoDropdown =document.getElementById("runoutWideNoDropdown").value; // prettier-ignore
-				const runoutByeDropdown =document.getElementById("runoutByeDropdown").value; // prettier-ignore
-
-				return {
-					runsSelected: parseInt(runoutRunsDropdown, 10),
-					wideNoSelected: runoutWideNoDropdown,
-					byeSelected: runoutByeDropdown === "bye",
-				};
-			},
-		}).then((result) => {
-			if (result.isConfirmed) {
-				const { runsSelected, wideNoSelected, byeSelected } = result.value;
-
-				if (wideNoSelected === "wide") handleRuns(runsSelected, true, false, 2, byeSelected); // prettier-ignore
-				if (wideNoSelected === "noball") handleRuns(runsSelected, false, true, 2, byeSelected); // prettier-ignore
-
-				if (wideNoSelected != "noball" && wideNoSelected != "wide")
-					handleRuns(runsSelected, false, false, 2, byeSelected);
-			}
-		});
+		setIsRunoutModalOpen(true);
 	};
+	function handleRunoutByeChange(event) {
+		setRunoutBye(event.target.value);
+	}
 
 	const showScoreboard = () => {
+		setSelectedBallIndex(null);
 		setSelectedOverForChange("");
 		setisScoreboardOpen(true);
 	};
@@ -335,8 +321,12 @@ const ScoreCard = () => {
 			// Use createRoot for rendering
 			const root = ReactDOM.createRoot(swalContent);
 
-			const handleTypeChange = (event) => {
-				setChangeType(event.target.value);
+			const handleInputChange = (event, type) => {
+				if (type === "changeType") {
+					setChangeType(event.target.value);
+				} else if (type === "bye") {
+					setByeChange(event.target.value);
+				}
 
 				// Force re-render of the ScoreChangePopUp component inside the Swal modal
 				root.render(
@@ -344,8 +334,8 @@ const ScoreCard = () => {
 						ballToChangeIsExtra={ballToChangeIsExtra}
 						over={over}
 						ball={ball}
-						bye={byeChange}
-						changeType={event.target.value} // Use the new value directly
+						bye={type === "bye" ? event.target.value : byeChange}
+						changeType={type === "changeType" ? event.target.value : changeType}
 						handleTypeChange={handleTypeChange}
 						handleByeChange={handleByeChange}
 					/>
@@ -355,24 +345,12 @@ const ScoreCard = () => {
 				});
 			};
 
-			const handleByeChange = (event) => {
-				setByeChange(event.target.value);
+			const handleTypeChange = (event) => {
+				handleInputChange(event, "changeType");
+			};
 
-				// Force re-render of the ScoreChangePopUp component inside the Swal modal
-				root.render(
-					<ScoreChangePopUp
-						ballToChangeIsExtra={ballToChangeIsExtra}
-						over={over}
-						ball={ball}
-						bye={event.target.value} // Use the new value directly
-						changeType={changeType}
-						handleTypeChange={handleTypeChange}
-						handleByeChange={handleByeChange}
-					/>
-				);
-				Swal.update({
-					html: swalContent,
-				});
+			const handleByeChange = (event) => {
+				handleInputChange(event, "bye");
 			};
 
 			root.render(
@@ -476,7 +454,37 @@ const ScoreCard = () => {
 		}
 	};
 
+	const handleConfirmRunout = () => {
+		if (!activeNewBatsmanSide) {
+			Swal.fire(
+				"Error",
+				"Please select which side did the new batsman arrive on.",
+				"error"
+			);
+			return;
+		} else {
+			const runoutRunsDropdown = document.getElementById("runoutRunsDropdown").value; // prettier-ignore
+			const runoutWideNoDropdown =document.getElementById("runoutWideNoDropdown").value; // prettier-ignore
+			const runoutByeDropdown =document.getElementById("runoutByeDropdown").value; // prettier-ignore
+
+			const runsSelected = parseInt(runoutRunsDropdown, 10);
+			const wideNoSelected = runoutWideNoDropdown;
+			const byeSelected = runoutByeDropdown === "bye";
+
+			if (wideNoSelected === "wide") handleRuns(runsSelected, true, false, 2, byeSelected,activeNewBatsmanSide); // prettier-ignore
+			if (wideNoSelected === "noball") handleRuns(runsSelected, false, true, 2, byeSelected,activeNewBatsmanSide); // prettier-ignore
+
+			if (wideNoSelected != "noball" && wideNoSelected != "wide")
+				handleRuns(runsSelected, false, false, 2, byeSelected,activeNewBatsmanSide); // prettier-ignore
+
+			setRunoutBye("0");
+			setIsRunoutModalOpen(false);
+			setActiveNewBatsmanSide("");
+		}
+	};
+
 	const handleUndo = () => {
+		setSelectedBallIndex(null);
 		Swal.fire({
 			title: "Are you sure you want to undo?",
 			showConfirmButton: false,
@@ -560,71 +568,103 @@ const ScoreCard = () => {
 	};
 
 	return (
-		<div className="container mx-auto text-center">
-			<div className="p-1 flex flex-col md:flex-row justify-around item-top">
-				<div style={{ flexBasis: "70%", flexGrow: 1, flexShrink: 0 }}>
-					<div className="mb-3">
-						<span className="text-[30vw] md:text-[20vw] lg:text-[15vw]">
-							{score.runs}/{score.wickets}
-						</span>
-						<span className="text-[10vw] md:text-[7vw] lg:text-[5vw]">
-							{score.overs}.{score.balls}
-						</span>
+		<div>
+			<div className="container mx-auto text-center">
+				<div className="p-1 flex flex-col md:flex-row justify-around item-top">
+					<div style={{ flexBasis: "70%", flexGrow: 1, flexShrink: 0 }}>
+						<div className="relative">
+							<span className="text-[30vw] md:text-[20vw] lg:text-[15vw]">
+								{score.runs}/{score.wickets}
+							</span>
+							<span className="text-[10vw] md:text-[7vw] lg:text-[5vw]">
+								{score.overs}.{score.balls}
+							</span>
+							<div className="flex justify-center">
+								<h1
+									className={`absolute bottom-0 md:bottom-5 max-h-10 text-black text-justify px-2 rounded-md ${
+										selectedBallIndex !== null ? "bg-info " : ""
+									}`}
+									onClick={() => {
+										setSelectedBallIndex(null);
+									}}>
+									{selectedBallIndex !== null && ballScores[selectedBallIndex]}
+								</h1>
+							</div>
+						</div>
+
+						<div className="flex items-center justify-around flex-wrap">
+							{Array(
+								6 +
+									ballScores.filter(
+										(score) => score.includes("N") || score.includes("Wd")
+									).length
+							)
+								.fill(null)
+								.map((_, ballIndex) => {
+									const score = ballScores[ballIndex];
+									if (score != null) {
+										return (
+											<button
+												key={ballIndex}
+												className={`w-[60px] h-[60px] md:w-[80px] md:h-[80px] border-2 border-gray-600 rounded-full overflow-hidden ${getButtonClass(
+													ballIndex,
+													score
+												)} ${getFontSizeClass(ballScores[ballIndex])}`}
+												onClick={() => {
+													if (selectedBallIndex === ballIndex) {
+														setSelectedBallIndex(null); // Toggle off if already selected
+													} else {
+														setSelectedBallIndex(ballIndex);
+													}
+												}}>
+												{ballScores[ballIndex]}
+											</button>
+										);
+									} else {
+										// Render placeholder
+										return (
+											<button
+												key={ballIndex}
+												className="w-[60px] h-[60px] md:w-[80px] md:h-[80px] border-2 border-gray-600 rounded-full"></button>
+										);
+									}
+								})}
+						</div>
 					</div>
-					<div className="flex items-center justify-around flex-wrap">
-						{Array(
-							6 +
-								ballScores.filter(
-									(score) => score.includes("N") || score.includes("Wd")
-								).length
-						)
-							.fill(null)
-							.map((_, ballIndex) => {
-								const score = ballScores[ballIndex];
-								if (score != null) {
-									return (
-										<button
-											key={ballIndex}
-											className={`w-[60px] h-[60px] md:w-[80px] md:h-[80px] border-2 border-gray-600 rounded-full overflow-hidden ${getButtonClass(
-												ballIndex,
-												score
-											)} ${getFontSizeClass(ballScores[ballIndex])}`}>
-											{ballScores[ballIndex]}
-										</button>
-									);
-								} else {
-									// Render placeholder
-									return (
-										<button
-											key={ballIndex}
-											className="w-[60px] h-[60px] md:w-[80px] md:h-[80px] border-2 border-gray-600 rounded-full"></button>
-									);
-								}
-							})}
-					</div>
-				</div>
-				<div style={{ flexBasis: "30%", flexGrow: 1, flexShrink: 0 }}>
-					{renderButtons()}
-					<div className="grid grid-cols-2 gap-2 mt-10">
-						<button
-							className="btn btn-outline btn-info"
-							onClick={showScoreboard}>
-							Scoreboard
-						</button>
-						<button className="btn btn-outline btn-error" onClick={handleUndo}>
-							Undo
-						</button>
+					<div style={{ flexBasis: "30%", flexGrow: 1, flexShrink: 0 }}>
+						{renderButtons()}
+						<div className="grid grid-cols-2 gap-2 mt-10">
+							<button
+								className="btn btn-outline btn-info"
+								onClick={showScoreboard}>
+								Scoreboard
+							</button>
+							<button
+								className="btn btn-outline btn-error"
+								onClick={handleUndo}>
+								Undo
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
+
+			<RunOutModal
+				isOpen={isRunoutModalOpen}
+				onRequestClose={() => setIsRunoutModalOpen(false)}
+				runoutBye={runoutBye}
+				handleRunoutByeChange={handleRunoutByeChange}
+				handleConfirmRunout={handleConfirmRunout}
+				activeNewBatsmanSide={activeNewBatsmanSide}
+				setActiveNewBatsmanSide={setActiveNewBatsmanSide}></RunOutModal>
+
 			<ScoreboardModal
 				isOpen={isScoreboardOpen}
 				onRequestClose={() => setisScoreboardOpen(false)}
 				oversHistory={oversHistory}
 				handleChangeScoreClick={handleChangeScoreClick}
 				setSelectedOverForChange={setSelectedOverForChange}
-				selectedOverForChange={selectedOverForChange}
-			/>
+				selectedOverForChange={selectedOverForChange}></ScoreboardModal>
 		</div>
 	);
 };
