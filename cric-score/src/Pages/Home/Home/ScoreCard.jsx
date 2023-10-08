@@ -57,6 +57,13 @@ const ScoreCard = () => {
 		bye = false,
 		newBatsmanSide = ""
 	) => {
+		if (score.balls === 0) {
+			setBallScores([]);
+			setBallWicket([]);
+			setBallWide([]);
+			setBallNO([]);
+		}
+		setSelectedBallIndex(null);
 		// Push current score to history before updating
 		setScoreHistory((prevHistory) => [...prevHistory, score]);
 		let ballDescription = [];
@@ -139,10 +146,6 @@ const ScoreCard = () => {
 				[...ballScores, ballDescription.join("+")],
 			];
 			setOversHistory(updatedOvers);
-			setBallScores([]);
-			setBallWicket([]);
-			setBallWide([]);
-			setBallNO([]);
 			allOutRef.current = false; // Reset the ref when a new over starts
 		}
 	};
@@ -276,6 +279,7 @@ const ScoreCard = () => {
 	}
 
 	const showScoreboard = () => {
+		setSelectedBallIndex(null);
 		setSelectedOverForChange("");
 		setisScoreboardOpen(true);
 	};
@@ -480,6 +484,7 @@ const ScoreCard = () => {
 	};
 
 	const handleUndo = () => {
+		setSelectedBallIndex(null);
 		Swal.fire({
 			title: "Are you sure you want to undo?",
 			showConfirmButton: false,
@@ -576,10 +581,8 @@ const ScoreCard = () => {
 							</span>
 							<div className="flex justify-center">
 								<h1
-									className={`absolute bottom-0 md:bottom-5 max-h-10 text-white text-justify px-2 rounded-md ${
-										selectedBallIndex !== null
-											? "bg-blue-500 border border-white"
-											: ""
+									className={`absolute bottom-0 md:bottom-5 max-h-10 text-black text-justify px-2 rounded-md ${
+										selectedBallIndex !== null ? "bg-info " : ""
 									}`}
 									onClick={() => {
 										setSelectedBallIndex(null);
