@@ -64,11 +64,15 @@ const ScoreCard = () => {
 		bye = false,
 		newBatsmanSide = ""
 	) => {
-		console.log(score.wickets);
 		if (score.wickets > 9) {
 			handleEndInnings();
 		} else {
-			if (score.balls === 0) {
+			if (
+				score.balls === 0 &&
+				!ballScores.every(
+					(score) => score.includes("Wd") || score.includes("N")
+				)
+			) {
 				setBallScores([]);
 				setBallWicket([]);
 				setBallWide([]);
@@ -317,10 +321,6 @@ const ScoreCard = () => {
 			Swal.fire("Error", "Please enter both over and ball numbers.", "error");
 			return;
 		}
-
-		// const ValidBallsCount = oversHistory[over -1]
-		// 	? oversHistory[over -1 ].filter((item) => !item.includes("N") && !item.includes("Wd") ).length
-		// 	: 0;
 
 		const ballToChange = ball != 0 ? oversHistory[over - 1][ball - 1] : "";
 
@@ -725,9 +725,6 @@ const ScoreCard = () => {
 				setBallWide([]);
 				setBallNO([]);
 				setOversHistory([]);
-				setBallWicket([]);
-				setBallWide([]);
-				setBallNO([]);
 				setScoreHistory([]);
 			}
 		});
