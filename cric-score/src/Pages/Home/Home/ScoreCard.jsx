@@ -61,96 +61,89 @@ const ScoreCard = () => {
 		bye = false,
 		newBatsmanSide = ""
 	) => {
-		if (score.balls === 0) {
-			setBallScores([]);
-			setBallWicket([]);
-			setBallWide([]);
-			setBallNO([]);
-		}
-		setSelectedBallIndex(null);
-		// Push current score to history before updating
-		setScoreHistory((prevHistory) => [...prevHistory, score]);
-		let ballDescription = [];
-
-		const isRanout = wicket > 1;
-		wicket = wicket ? 1 : 0;
-
-		if (wicket) ballDescription.push("Out");
-		if (isRanout && newBatsmanSide === "keeperSide") ballDescription.push("Rk");
-		if (isRanout && newBatsmanSide === "bowlerSide") ballDescription.push("Rb");
-		if (noBall) ballDescription.push("N");
-		if (wide) ballDescription.push("Wd");
-		if (bye) ballDescription.push("B");
-		if (run === 0 && !wicket && !noBall && !wide) ballDescription.push("0");
-		if (run > 0) ballDescription.push(run.toString());
-
-		setBallScores((prevScores) => [...prevScores, ballDescription.join("+")]);
-
-		if (score.wickets >= 10) {
-			ballScores.pop();
-		}
-
-		if (wicket) {
-			setBallWicket((prevWickets) => [...prevWickets, true]);
+		console.log(score.wickets);
+		if (score.wickets > 9) {
+			handleEndInnings();
 		} else {
-			setBallWicket((prevWickets) => [...prevWickets, false]);
-		}
-		if (wide) {
-			setBallWide((ballWides) => [...ballWides, true]);
-		} else {
-			setBallWide((ballWides) => [...ballWides, false]);
-		}
-		if (noBall) {
-			setBallNO((ballNOs) => [...ballNOs, true]);
-		} else {
-			setBallNO((ballNOs) => [...ballNOs, false]);
-		}
-
-		const extraball = wide || noBall;
-
-		setScore((prevScore) => {
-			let newBalls = extraball ? prevScore.balls : prevScore.balls + 1;
-			let newRuns = extraball ? prevScore.runs + run + 1 : prevScore.runs + run;
-			let additionalBalls = 0;
-			if (newBalls >= 6) {
-				additionalBalls = 1;
-				newBalls = 0;
+			if (score.balls === 0) {
+				setBallScores([]);
+				setBallWicket([]);
+				setBallWide([]);
+				setBallNO([]);
 			}
-			if (prevScore.wickets + wicket === 10) {
-				Swal.fire({
-					icon: "error",
-					title: "Oops... All out",
-					text: "End of Innings",
-				});
+			setSelectedBallIndex(null);
+			// Push current score to history before updating
+			setScoreHistory((prevHistory) => [...prevHistory, score]);
+			let ballDescription = [];
+
+			const isRanout = wicket > 1;
+			wicket = wicket ? 1 : 0;
+
+			if (wicket) ballDescription.push("Out");
+			if (isRanout && newBatsmanSide === "keeperSide")
+				ballDescription.push("Rk");
+			if (isRanout && newBatsmanSide === "bowlerSide")
+				ballDescription.push("Rb");
+			if (noBall) ballDescription.push("N");
+			if (wide) ballDescription.push("Wd");
+			if (bye) ballDescription.push("B");
+			if (run === 0 && !wicket && !noBall && !wide) ballDescription.push("0");
+			if (run > 0) ballDescription.push(run.toString());
+
+			setBallScores((prevScores) => [...prevScores, ballDescription.join("+")]);
+
+			if (wicket) {
+				setBallWicket((prevWickets) => [...prevWickets, true]);
+			} else {
+				setBallWicket((prevWickets) => [...prevWickets, false]);
 			}
-			if (score.wickets === 10) {
-				Swal.fire({
-					icon: "error",
-					title: "Oops... All out",
-					text: "End of Innings",
-				});
+			if (wide) {
+				setBallWide((ballWides) => [...ballWides, true]);
+			} else {
+				setBallWide((ballWides) => [...ballWides, false]);
+			}
+			if (noBall) {
+				setBallNO((ballNOs) => [...ballNOs, true]);
+			} else {
+				setBallNO((ballNOs) => [...ballNOs, false]);
+			}
+
+			const extraball = wide || noBall;
+
+			setScore((prevScore) => {
+				let newBalls = extraball ? prevScore.balls : prevScore.balls + 1;
+				let newRuns = extraball
+					? prevScore.runs + run + 1
+					: prevScore.runs + run;
+				let additionalBalls = 0;
+				if (newBalls >= 6) {
+					additionalBalls = 1;
+					newBalls = 0;
+				}
+				if (prevScore.wickets + wicket === 10) {
+					Swal.fire({
+						icon: "error",
+						title: "Oops... All out",
+						text: "Press End of Innings",
+					});
+				}
 				return {
-					overs: prevScore.overs,
-					balls: prevScore.balls,
-					runs: prevScore.runs,
-					wickets: prevScore.wickets,
+					overs: prevScore.overs + additionalBalls,
+					balls: newBalls,
+					runs: newRuns,
+					wickets: prevScore.wickets + wicket,
 				};
+			});
+
+			// Check for end of over outside of setScore
+			if (score.balls === 5 && !extraball) {
+				const updatedOvers = [
+					...oversHistory,
+					[...ballScores, ballDescription.join("+")],
+				];
+				setOversHistory(updatedOvers);
+				allOutRef.current = false; // Reset the ref when a new over starts
 			}
-			return {
-				overs: prevScore.overs + additionalBalls,
-				balls: newBalls,
-				runs: newRuns,
-				wickets: prevScore.wickets + wicket,
-			};
-		});
-		// Check for end of over outside of setScore
-		if ((score.balls === 5 && !extraball) || score.wickets + wicket >= 10) {
-			const updatedOvers = [
-				...oversHistory,
-				[...ballScores, ballDescription.join("+")],
-			];
-			setOversHistory(updatedOvers);
-			allOutRef.current = false; // Reset the ref when a new over starts
 		}
 	};
 
@@ -626,6 +619,9 @@ const ScoreCard = () => {
 		screenWidth = window.innerWidth;
 		const swalContentTarget = (
 			<div className="max-w-full">
+				<h1 className="mb-5">
+					Do you want to put a target for the next Innings?
+				</h1>
 				<table className="min-w-full border-collapse">
 					<thead>
 						<tr>
@@ -676,7 +672,7 @@ const ScoreCard = () => {
 		root.render(swalContentTarget);
 
 		Swal.fire({
-			title: "What is the target?",
+			title: "End of The Innings",
 			html: swalContent,
 			confirmButtonText: "Confirm",
 			preConfirm: () => {
