@@ -705,6 +705,11 @@ const ScoreCard = () => {
 				setBallWicket([]);
 				setBallWide([]);
 				setBallNO([]);
+				setOversHistory([]);
+				setBallWicket([]);
+				setBallWide([]);
+				setBallNO([]);
+				setScoreHistory([]);
 			}
 		});
 	};
