@@ -8,6 +8,7 @@ import ReactDOM from "react-dom/client";
 import ReactDOMServer from "react-dom/server";
 import ScoreboardModal from "./ScoreboardModal";
 import RunOutModal from "./RunOutModal";
+import OutModal from "./OutModal";
 import { createRoot } from "react-dom";
 
 const ScoreCard = () => {
@@ -31,7 +32,9 @@ const ScoreCard = () => {
 	const [runoutBye, setRunoutBye] = useState("0");
 	const [isScoreboardOpen, setisScoreboardOpen] = useState(false);
 	const [isRunoutModalOpen, setIsRunoutModalOpen] = useState(false);
+	const [isOutModalOpen, setIsOutModalOpen] = useState(false);
 	const [activeNewBatsmanSide, setActiveNewBatsmanSide] = useState("");
+	const [dismissalAwardedTo, setDismissalAwardedTo] = useState("");
 	const [selectedBallIndex, setSelectedBallIndex] = useState(null);
 	const [targetDetails, setTargetDetails] = useState({});
 
@@ -191,9 +194,7 @@ const ScoreCard = () => {
 						Bye / <br />
 						Leg-bye
 					</button>
-					<button
-						className="btn btn-error"
-						onClick={() => handleRuns(0, false, false, 1)}>
+					<button className="btn btn-error" onClick={handleOut}>
 						Wicket
 					</button>
 					<button
@@ -268,12 +269,30 @@ const ScoreCard = () => {
 		});
 	};
 
-	const handleRunout = () => {
-		setIsRunoutModalOpen(true);
+	const handleOut = () => {
+		setIsOutModalOpen(true);
 	};
 	function handleRunoutByeChange(event) {
 		setRunoutBye(event.target.value);
 	}
+	const handleConfirmWicket = () => {
+		if (!dismissalAwardedTo) {
+			Swal.fire(
+				"Error",
+				"Please select to whom the dismissal was awarded.",
+				"error"
+			);
+			return;
+		} else if (dismissalAwardedTo != "none") {
+			handleRuns(0, false, false, 1);
+		}
+		setIsOutModalOpen(false);
+		setDismissalAwardedTo("");
+	};
+
+	const handleRunout = () => {
+		setIsRunoutModalOpen(true);
+	};
 
 	const showScoreboard = () => {
 		setSelectedBallIndex(null);
@@ -866,6 +885,13 @@ const ScoreCard = () => {
 					</div>
 				</div>
 			</div>
+
+			<OutModal
+				isOpen={isOutModalOpen}
+				onRequestClose={() => setIsOutModalOpen(false)}
+				handleConfirmWicket={handleConfirmWicket}
+				dismissalAwardedTo={dismissalAwardedTo}
+				setDismissalAwardedTo={setDismissalAwardedTo}></OutModal>
 
 			<RunOutModal
 				isOpen={isRunoutModalOpen}
