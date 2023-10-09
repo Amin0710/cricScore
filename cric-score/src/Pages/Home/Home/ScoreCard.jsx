@@ -35,6 +35,8 @@ const ScoreCard = () => {
 	const [selectedBallIndex, setSelectedBallIndex] = useState(null);
 	const [targetDetails, setTargetDetails] = useState({});
 
+	let screenWidth = window.innerWidth;
+
 	const firstAllOutRef = useRef(true);
 	const allOutRef = useRef(false);
 
@@ -538,6 +540,7 @@ const ScoreCard = () => {
 	};
 
 	const handleTargetMode = () => {
+		screenWidth = window.innerWidth;
 		const swalContentTarget = (
 			<div className="max-w-full">
 				<table className="min-w-full border-collapse">
@@ -619,6 +622,97 @@ const ScoreCard = () => {
 		});
 	};
 
+	const handleEndInnings = () => {
+		screenWidth = window.innerWidth;
+		const swalContentTarget = (
+			<div className="max-w-full">
+				<table className="min-w-full border-collapse">
+					<thead>
+						<tr>
+							<th className="border p-1">Runs</th>
+							<th className="border p-1">Overs</th>
+							<th className="border p-1">Wickets</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td className="border p-1">
+								<input
+									id="targetRun"
+									className="bg-white p-1 m-1 rounded w-full"
+									value={score.runs + 1}
+									readOnly
+								/>
+							</td>
+							<td className="border p-1">
+								<input
+									id="targetOvers"
+									type="number"
+									className="bg-gray-200 p-1 m-1 rounded"
+									min="1"
+									max="50"
+								/>
+							</td>
+							<td className="border p-1">
+								<input
+									id="targetWickets"
+									type="number"
+									className="bg-gray-200 p-1 m-1 rounded"
+									min="1"
+									max="10"
+								/>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		);
+
+		const swalContent = document.createElement("div");
+
+		// Use createRoot for rendering
+		const root = createRoot(swalContent);
+
+		root.render(swalContentTarget);
+
+		Swal.fire({
+			title: "What is the target?",
+			html: swalContent,
+			confirmButtonText: "Confirm",
+			preConfirm: () => {
+				// Retrieve the selected values from the dropdowns
+				const targetRun = document.getElementById("targetRun").value; // prettier-ignore
+				const targetOvers =document.getElementById("targetOvers").value; // prettier-ignore
+				const targetWickets =document.getElementById("targetWickets").value; // prettier-ignore
+
+				return {
+					targetRun: parseInt(targetRun, 10),
+					targetOvers: parseInt(targetOvers, 10),
+					targetWickets: parseInt(targetWickets, 10),
+				};
+			},
+		}).then((result) => {
+			if (result.isConfirmed) {
+				const { targetRun, targetOvers, targetWickets } = result.value;
+				if (targetRun && targetOvers && targetWickets) {
+					setTargetDetails({ targetRun, targetOvers, targetWickets });
+				} else {
+					setTargetDetails({});
+				}
+				setScore({
+					overs: 0,
+					balls: 0,
+					runs: 0,
+					wickets: 0,
+				});
+				setBallScores([]);
+				setBallWicket([]);
+				setBallWide([]);
+				setBallNO([]);
+			}
+		});
+	};
+
 	const getFontSizeClass = (text) => {
 		const length = text.length;
 
@@ -669,17 +763,17 @@ const ScoreCard = () => {
 												<span className="text-xl text-info font-bold">
 													{targetDetails.targetRun - score.runs}
 												</span>{" "}
-												runs needed in{" "}
+												runs {screenWidth >= 355 ? "needed" : ""} in{" "}
 												<span className="text-xl text-info font-bold">
 													{targetDetails.targetOvers * 6 -
 														score.overs * 6 -
 														score.balls}
 												</span>{" "}
 												balls with{" "}
-												<span className="text-red-700 font-bold">
+												<span className="text-xl text-red-700 font-bold">
 													{targetDetails.targetWickets - score.wickets}
 												</span>{" "}
-												wickets.
+												{screenWidth >= 355 ? "wickets" : "Wks"}.
 											</>
 										)}
 								</h1>
@@ -759,7 +853,7 @@ const ScoreCard = () => {
 						<div className="grid grid-cols-2 gap-2 mt-5">
 							<button
 								className="btn btn-neutral text-white"
-								onClick={showScoreboard}>
+								onClick={handleEndInnings}>
 								End of the innings
 							</button>
 							<button
