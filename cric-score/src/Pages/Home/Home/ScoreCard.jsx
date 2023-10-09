@@ -8,6 +8,8 @@ import ReactDOM from "react-dom/client";
 import ReactDOMServer from "react-dom/server";
 import ScoreboardModal from "./ScoreboardModal";
 import RunOutModal from "./RunOutModal";
+import OutModal from "./OutModal";
+import { createRoot } from "react-dom";
 
 const ScoreCard = () => {
 	const [score, setScore] = useState({
@@ -30,8 +32,13 @@ const ScoreCard = () => {
 	const [runoutBye, setRunoutBye] = useState("0");
 	const [isScoreboardOpen, setisScoreboardOpen] = useState(false);
 	const [isRunoutModalOpen, setIsRunoutModalOpen] = useState(false);
+	const [isOutModalOpen, setIsOutModalOpen] = useState(false);
 	const [activeNewBatsmanSide, setActiveNewBatsmanSide] = useState("");
+	const [dismissalAwardedTo, setDismissalAwardedTo] = useState("");
 	const [selectedBallIndex, setSelectedBallIndex] = useState(null);
+	const [targetDetails, setTargetDetails] = useState({});
+
+	let screenWidth = window.innerWidth;
 
 	const firstAllOutRef = useRef(true);
 	const allOutRef = useRef(false);
@@ -57,96 +64,89 @@ const ScoreCard = () => {
 		bye = false,
 		newBatsmanSide = ""
 	) => {
-		if (score.balls === 0) {
-			setBallScores([]);
-			setBallWicket([]);
-			setBallWide([]);
-			setBallNO([]);
-		}
-		setSelectedBallIndex(null);
-		// Push current score to history before updating
-		setScoreHistory((prevHistory) => [...prevHistory, score]);
-		let ballDescription = [];
-
-		const isRanout = wicket > 1;
-		wicket = wicket ? 1 : 0;
-
-		if (wicket) ballDescription.push("Out");
-		if (isRanout && newBatsmanSide === "keeperSide") ballDescription.push("Rk");
-		if (isRanout && newBatsmanSide === "bowlerSide") ballDescription.push("Rb");
-		if (noBall) ballDescription.push("N");
-		if (wide) ballDescription.push("Wd");
-		if (bye) ballDescription.push("B");
-		if (run === 0 && !wicket && !noBall && !wide) ballDescription.push("0");
-		if (run > 0) ballDescription.push(run.toString());
-
-		setBallScores((prevScores) => [...prevScores, ballDescription.join("+")]);
-
-		if (score.wickets >= 10) {
-			ballScores.pop();
-		}
-
-		if (wicket) {
-			setBallWicket((prevWickets) => [...prevWickets, true]);
+		console.log(score.wickets);
+		if (score.wickets > 9) {
+			handleEndInnings();
 		} else {
-			setBallWicket((prevWickets) => [...prevWickets, false]);
-		}
-		if (wide) {
-			setBallWide((ballWides) => [...ballWides, true]);
-		} else {
-			setBallWide((ballWides) => [...ballWides, false]);
-		}
-		if (noBall) {
-			setBallNO((ballNOs) => [...ballNOs, true]);
-		} else {
-			setBallNO((ballNOs) => [...ballNOs, false]);
-		}
-
-		const extraball = wide || noBall;
-
-		setScore((prevScore) => {
-			let newBalls = extraball ? prevScore.balls : prevScore.balls + 1;
-			let newRuns = extraball ? prevScore.runs + run + 1 : prevScore.runs + run;
-			let additionalBalls = 0;
-			if (newBalls >= 6) {
-				additionalBalls = 1;
-				newBalls = 0;
+			if (score.balls === 0) {
+				setBallScores([]);
+				setBallWicket([]);
+				setBallWide([]);
+				setBallNO([]);
 			}
-			if (prevScore.wickets + wicket === 10) {
-				Swal.fire({
-					icon: "error",
-					title: "Oops... All out",
-					text: "End of Innings",
-				});
+			setSelectedBallIndex(null);
+			// Push current score to history before updating
+			setScoreHistory((prevHistory) => [...prevHistory, score]);
+			let ballDescription = [];
+
+			const isRanout = wicket > 1;
+			wicket = wicket ? 1 : 0;
+
+			if (wicket) ballDescription.push("Out");
+			if (isRanout && newBatsmanSide === "keeperSide")
+				ballDescription.push("Rk");
+			if (isRanout && newBatsmanSide === "bowlerSide")
+				ballDescription.push("Rb");
+			if (noBall) ballDescription.push("N");
+			if (wide) ballDescription.push("Wd");
+			if (bye) ballDescription.push("B");
+			if (run === 0 && !wicket && !noBall && !wide) ballDescription.push("0");
+			if (run > 0) ballDescription.push(run.toString());
+
+			setBallScores((prevScores) => [...prevScores, ballDescription.join("+")]);
+
+			if (wicket) {
+				setBallWicket((prevWickets) => [...prevWickets, true]);
+			} else {
+				setBallWicket((prevWickets) => [...prevWickets, false]);
 			}
-			if (score.wickets === 10) {
-				Swal.fire({
-					icon: "error",
-					title: "Oops... All out",
-					text: "End of Innings",
-				});
+			if (wide) {
+				setBallWide((ballWides) => [...ballWides, true]);
+			} else {
+				setBallWide((ballWides) => [...ballWides, false]);
+			}
+			if (noBall) {
+				setBallNO((ballNOs) => [...ballNOs, true]);
+			} else {
+				setBallNO((ballNOs) => [...ballNOs, false]);
+			}
+
+			const extraball = wide || noBall;
+
+			setScore((prevScore) => {
+				let newBalls = extraball ? prevScore.balls : prevScore.balls + 1;
+				let newRuns = extraball
+					? prevScore.runs + run + 1
+					: prevScore.runs + run;
+				let additionalBalls = 0;
+				if (newBalls >= 6) {
+					additionalBalls = 1;
+					newBalls = 0;
+				}
+				if (prevScore.wickets + wicket === 10) {
+					Swal.fire({
+						icon: "error",
+						title: "Oops... All out",
+						text: "Press End of Innings",
+					});
+				}
 				return {
-					overs: prevScore.overs,
-					balls: prevScore.balls,
-					runs: prevScore.runs,
-					wickets: prevScore.wickets,
+					overs: prevScore.overs + additionalBalls,
+					balls: newBalls,
+					runs: newRuns,
+					wickets: prevScore.wickets + wicket,
 				};
+			});
+
+			// Check for end of over outside of setScore
+			if (score.balls === 5 && !extraball) {
+				const updatedOvers = [
+					...oversHistory,
+					[...ballScores, ballDescription.join("+")],
+				];
+				setOversHistory(updatedOvers);
+				allOutRef.current = false; // Reset the ref when a new over starts
 			}
-			return {
-				overs: prevScore.overs + additionalBalls,
-				balls: newBalls,
-				runs: newRuns,
-				wickets: prevScore.wickets + wicket,
-			};
-		});
-		// Check for end of over outside of setScore
-		if ((score.balls === 5 && !extraball) || score.wickets + wicket >= 10) {
-			const updatedOvers = [
-				...oversHistory,
-				[...ballScores, ballDescription.join("+")],
-			];
-			setOversHistory(updatedOvers);
-			allOutRef.current = false; // Reset the ref when a new over starts
 		}
 	};
 
@@ -194,9 +194,7 @@ const ScoreCard = () => {
 						Bye / <br />
 						Leg-bye
 					</button>
-					<button
-						className="btn btn-error"
-						onClick={() => handleRuns(0, false, false, 1)}>
+					<button className="btn btn-error" onClick={handleOut}>
 						Wicket
 					</button>
 					<button
@@ -271,12 +269,30 @@ const ScoreCard = () => {
 		});
 	};
 
-	const handleRunout = () => {
-		setIsRunoutModalOpen(true);
+	const handleOut = () => {
+		setIsOutModalOpen(true);
 	};
 	function handleRunoutByeChange(event) {
 		setRunoutBye(event.target.value);
 	}
+	const handleConfirmWicket = () => {
+		if (!dismissalAwardedTo) {
+			Swal.fire(
+				"Error",
+				"Please select to whom the dismissal was awarded.",
+				"error"
+			);
+			return;
+		} else if (dismissalAwardedTo != "none") {
+			handleRuns(0, false, false, 1);
+		}
+		setIsOutModalOpen(false);
+		setDismissalAwardedTo("");
+	};
+
+	const handleRunout = () => {
+		setIsRunoutModalOpen(true);
+	};
 
 	const showScoreboard = () => {
 		setSelectedBallIndex(null);
@@ -535,6 +551,188 @@ const ScoreCard = () => {
 		});
 	};
 
+	const handleTargetMode = () => {
+		screenWidth = window.innerWidth;
+		const swalContentTarget = (
+			<div className="max-w-full">
+				<table className="min-w-full border-collapse">
+					<thead>
+						<tr>
+							<th className="border p-1">Runs</th>
+							<th className="border p-1">Overs</th>
+							<th className="border p-1">Wickets</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td className="border p-1">
+								<input
+									id="targetRun"
+									type="number"
+									className="bg-gray-200 p-1 m-1 rounded"
+									min="1"
+									max="1000"
+								/>
+							</td>
+							<td className="border p-1">
+								<input
+									id="targetOvers"
+									type="number"
+									className="bg-gray-200 p-1 m-1 rounded"
+									min="1"
+									max="50"
+								/>
+							</td>
+							<td className="border p-1">
+								<input
+									id="targetWickets"
+									type="number"
+									className="bg-gray-200 p-1 m-1 rounded"
+									min="1"
+									max="10"
+								/>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		);
+
+		const swalContent = document.createElement("div");
+
+		// Use createRoot for rendering
+		const root = createRoot(swalContent);
+
+		root.render(swalContentTarget);
+
+		Swal.fire({
+			title: "What is the target?",
+			html: swalContent,
+			confirmButtonText: "Confirm",
+			preConfirm: () => {
+				// Retrieve the selected values from the dropdowns
+				const targetRun = document.getElementById("targetRun").value; // prettier-ignore
+				const targetOvers =document.getElementById("targetOvers").value; // prettier-ignore
+				const targetWickets =document.getElementById("targetWickets").value; // prettier-ignore
+
+				if (!targetRun || !targetOvers || !targetWickets) {
+					Swal.fire("Error", "Please enter all fields.", "error");
+					return;
+				}
+
+				return {
+					targetRun: parseInt(targetRun, 10),
+					targetOvers: parseInt(targetOvers, 10),
+					targetWickets: parseInt(targetWickets, 10),
+				};
+			},
+		}).then((result) => {
+			if (result.isConfirmed) {
+				const { targetRun, targetOvers, targetWickets } = result.value;
+				setTargetDetails({ targetRun, targetOvers, targetWickets });
+			}
+		});
+	};
+
+	const handleEndInnings = () => {
+		screenWidth = window.innerWidth;
+		const swalContentTarget = (
+			<div className="max-w-full">
+				<h1 className="mb-5">
+					Do you want to put a target for the next Innings?
+				</h1>
+				<table className="min-w-full border-collapse">
+					<thead>
+						<tr>
+							<th className="border p-1">Runs</th>
+							<th className="border p-1">Overs</th>
+							<th className="border p-1">Wickets</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td className="border p-1">
+								<input
+									id="targetRun"
+									className="bg-white p-1 m-1 rounded w-full"
+									value={score.runs + 1}
+									readOnly
+								/>
+							</td>
+							<td className="border p-1">
+								<input
+									id="targetOvers"
+									type="number"
+									className="bg-gray-200 p-1 m-1 rounded"
+									min="1"
+									max="50"
+								/>
+							</td>
+							<td className="border p-1">
+								<input
+									id="targetWickets"
+									type="number"
+									className="bg-gray-200 p-1 m-1 rounded"
+									min="1"
+									max="10"
+								/>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		);
+
+		const swalContent = document.createElement("div");
+
+		// Use createRoot for rendering
+		const root = createRoot(swalContent);
+
+		root.render(swalContentTarget);
+
+		Swal.fire({
+			title: "End of The Innings",
+			html: swalContent,
+			confirmButtonText: "Confirm",
+			preConfirm: () => {
+				// Retrieve the selected values from the dropdowns
+				const targetRun = document.getElementById("targetRun").value; // prettier-ignore
+				const targetOvers =document.getElementById("targetOvers").value; // prettier-ignore
+				const targetWickets =document.getElementById("targetWickets").value; // prettier-ignore
+
+				return {
+					targetRun: parseInt(targetRun, 10),
+					targetOvers: parseInt(targetOvers, 10),
+					targetWickets: parseInt(targetWickets, 10),
+				};
+			},
+		}).then((result) => {
+			if (result.isConfirmed) {
+				const { targetRun, targetOvers, targetWickets } = result.value;
+				if (targetRun && targetOvers && targetWickets) {
+					setTargetDetails({ targetRun, targetOvers, targetWickets });
+				} else {
+					setTargetDetails({});
+				}
+				setScore({
+					overs: 0,
+					balls: 0,
+					runs: 0,
+					wickets: 0,
+				});
+				setBallScores([]);
+				setBallWicket([]);
+				setBallWide([]);
+				setBallNO([]);
+				setOversHistory([]);
+				setBallWicket([]);
+				setBallWide([]);
+				setBallNO([]);
+				setScoreHistory([]);
+			}
+		});
+	};
+
 	const getFontSizeClass = (text) => {
 		const length = text.length;
 
@@ -573,6 +771,33 @@ const ScoreCard = () => {
 				<div className="p-1 flex flex-col md:flex-row justify-around item-top">
 					<div style={{ flexBasis: "70%", flexGrow: 1, flexShrink: 0 }}>
 						<div className="relative">
+							<div className="flex justify-center">
+								<h1
+									className={`absolute top-0 md:top-5 max-h-20 text-white text-justify px-2 rounded-md ${
+										selectedBallIndex !== null ? "bg-neutral" : ""
+									}`}>
+									{targetDetails.targetRun &&
+										targetDetails.targetOvers &&
+										targetDetails.targetWickets && (
+											<>
+												<span className="text-xl text-info font-bold">
+													{targetDetails.targetRun - score.runs}
+												</span>{" "}
+												runs {screenWidth >= 355 ? "needed" : ""} in{" "}
+												<span className="text-xl text-info font-bold">
+													{targetDetails.targetOvers * 6 -
+														score.overs * 6 -
+														score.balls}
+												</span>{" "}
+												balls with{" "}
+												<span className="text-xl text-red-700 font-bold">
+													{targetDetails.targetWickets - score.wickets}
+												</span>{" "}
+												{screenWidth >= 355 ? "wickets" : "Wks"}.
+											</>
+										)}
+								</h1>
+							</div>
 							<span className="text-[30vw] md:text-[20vw] lg:text-[15vw]">
 								{score.runs}/{score.wickets}
 							</span>
@@ -645,9 +870,28 @@ const ScoreCard = () => {
 								Undo
 							</button>
 						</div>
+						<div className="grid grid-cols-2 gap-2 mt-5">
+							<button
+								className="btn btn-neutral text-white"
+								onClick={handleEndInnings}>
+								End of the innings
+							</button>
+							<button
+								className="btn btn-neutral text-white"
+								onClick={handleTargetMode}>
+								Target Mode
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
+
+			<OutModal
+				isOpen={isOutModalOpen}
+				onRequestClose={() => setIsOutModalOpen(false)}
+				handleConfirmWicket={handleConfirmWicket}
+				dismissalAwardedTo={dismissalAwardedTo}
+				setDismissalAwardedTo={setDismissalAwardedTo}></OutModal>
 
 			<RunOutModal
 				isOpen={isRunoutModalOpen}
