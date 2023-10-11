@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import "./ScoreCard.css";
 import ScoreChangePopUp from "./ScoreChangePopUp";
@@ -11,21 +11,41 @@ import RunOutModal from "./RunOutModal";
 import OutModal from "./OutModal";
 import { createRoot } from "react-dom";
 
+function useLocalStorageState(key, defaultValue) {
+	const [value, setValue] = useState(() => {
+		const jsonValue = localStorage.getItem(key);
+		if (jsonValue != null) {
+			return JSON.parse(jsonValue);
+		}
+		if (typeof defaultValue === "function") {
+			return defaultValue();
+		} else {
+			return defaultValue;
+		}
+	});
+
+	useEffect(() => {
+		localStorage.setItem(key, JSON.stringify(value));
+	}, [key, value]);
+
+	return [value, setValue];
+}
+
 const ScoreCard = () => {
-	const [score, setScore] = useState({
+	// Initialize score history state
+	const [score, setScore] = useLocalStorageState("score", {
 		overs: 0,
 		balls: 0,
 		runs: 0,
 		wickets: 0,
 	});
-
-	// Initialize score history state
+	const [oversHistory, setOversHistory] = useLocalStorageState("oversHistory",[]); // prettier-ignore
+	const [ballScores, setBallScores] = useLocalStorageState("ballScores",[]); // prettier-ignore
+	const [ballWicket, setBallWicket] = useLocalStorageState("ballWicket",[]); // prettier-ignore
+	const [ballWide, setBallWide] = useLocalStorageState("ballWide",[]); // prettier-ignore
+	const [ballNO, setBallNO] = useLocalStorageState("ballNO",[]); // prettier-ignore
+	const [targetDetails, setTargetDetails] = useLocalStorageState("targetDetails",{}); // prettier-ignore
 	const [scoreHistory, setScoreHistory] = useState([]);
-	const [oversHistory, setOversHistory] = useState([]);
-	const [ballScores, setBallScores] = useState([]);
-	const [ballWicket, setBallWicket] = useState([]);
-	const [ballWide, setBallWide] = useState([]);
-	const [ballNO, setBallNO] = useState([]);
 	const [selectedOverForChange, setSelectedOverForChange] = useState(0);
 	const [changeType, setChangeType] = useState("change");
 	const [byeChange, setByeChange] = useState("0");
@@ -36,25 +56,36 @@ const ScoreCard = () => {
 	const [activeNewBatsmanSide, setActiveNewBatsmanSide] = useState("");
 	const [dismissalAwardedTo, setDismissalAwardedTo] = useState("");
 	const [selectedBallIndex, setSelectedBallIndex] = useState(null);
-	const [targetDetails, setTargetDetails] = useState({});
+
+	useEffect(() => {
+		if (targetDetails.targetRun - score.runs <= 0) {
+			Swal.fire({
+				title: "Game Over!!! Team batting 2nd Won.",
+				icon: "success",
+				confirmButtonText: "Confirm",
+			}).then((result) => {
+				if (result.isConfirmed) {
+					handleEndInnings();
+				}
+			});
+		} else if (
+			targetDetails.targetOvers * 6 - score.overs * 6 - score.balls <= 0 ||
+			targetDetails.targetWickets - score.wickets <= 0
+		) {
+			Swal.fire({
+				title: "Game Over!!! Team batting 2nd Lost.",
+				icon: "error",
+				confirmButtonText: "Confirm",
+			}).then((result) => {
+				if (result.isConfirmed) {
+					handleEndInnings();
+				}
+			});
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [targetDetails, score]);
 
 	let screenWidth = window.innerWidth;
-
-	const firstAllOutRef = useRef(true);
-	const allOutRef = useRef(false);
-
-	// Check for allOut and stop new over
-	useEffect(() => {
-		if (score.wickets === 10 && !allOutRef.current) {
-			const updatedOvers = [...oversHistory];
-			if (!firstAllOutRef.current && updatedOvers.length > 0) {
-				updatedOvers.pop();
-			}
-			setOversHistory(updatedOvers);
-			allOutRef.current = true; // Mark the action as taken
-			firstAllOutRef.current = false;
-		}
-	}, [score.wickets, oversHistory]);
 
 	const handleRuns = (
 		run,
@@ -83,13 +114,13 @@ const ScoreCard = () => {
 			setScoreHistory((prevHistory) => [...prevHistory, score]);
 			let ballDescription = [];
 
-			const isRanout = wicket > 1;
+			const isRunout = wicket > 1;
 			wicket = wicket ? 1 : 0;
 
 			if (wicket) ballDescription.push("Out");
-			if (isRanout && newBatsmanSide === "keeperSide")
+			if (isRunout && newBatsmanSide === "keeperSide")
 				ballDescription.push("Rk");
-			if (isRanout && newBatsmanSide === "bowlerSide")
+			if (isRunout && newBatsmanSide === "bowlerSide")
 				ballDescription.push("Rb");
 			if (noBall) ballDescription.push("N");
 			if (wide) ballDescription.push("Wd");
@@ -100,19 +131,19 @@ const ScoreCard = () => {
 			setBallScores((prevScores) => [...prevScores, ballDescription.join("+")]);
 
 			if (wicket) {
-				setBallWicket((prevWickets) => [...prevWickets, true]);
+				setBallWicket((ballWicket) => [...ballWicket, true]);
 			} else {
-				setBallWicket((prevWickets) => [...prevWickets, false]);
+				setBallWicket((ballWicket) => [...ballWicket, false]);
 			}
 			if (wide) {
-				setBallWide((ballWides) => [...ballWides, true]);
+				setBallWide((ballWide) => [...ballWide, true]);
 			} else {
-				setBallWide((ballWides) => [...ballWides, false]);
+				setBallWide((ballWide) => [...ballWide, false]);
 			}
 			if (noBall) {
-				setBallNO((ballNOs) => [...ballNOs, true]);
+				setBallNO((ballNO) => [...ballNO, true]);
 			} else {
-				setBallNO((ballNOs) => [...ballNOs, false]);
+				setBallNO((ballNO) => [...ballNO, false]);
 			}
 
 			const extraball = wide || noBall;
@@ -149,7 +180,6 @@ const ScoreCard = () => {
 					[...ballScores, ballDescription.join("+")],
 				];
 				setOversHistory(updatedOvers);
-				allOutRef.current = false; // Reset the ref when a new over starts
 			}
 		}
 	};
@@ -460,7 +490,6 @@ const ScoreCard = () => {
 						};
 					});
 					setOversHistory([...oversHistory]); // Update the state to reflect the addition in the scoreboard
-
 					setSelectedOverForChange("");
 					document.getElementById("changeBallInput").value = "";
 					setChangeType("change");
@@ -514,32 +543,22 @@ const ScoreCard = () => {
 					// Pop the last over from oversHistory
 					const lastOver = oversHistory.pop();
 					setOversHistory([...oversHistory]);
-
 					// Pop the last ball from the lastOver
 					lastOver.pop();
 					setBallScores(lastOver);
-
-					// Pop the last ball's data from the state arrays
-					ballWicket.pop();
-					ballWide.pop();
-					ballNO.pop();
-					setBallWicket([...ballWicket]);
-					setBallWide([...ballWide]);
-					setBallNO([...ballNO]);
 				} else {
 					// Pop the last score from ballScores
 					const newBallScores = [...ballScores];
 					newBallScores.pop();
 					setBallScores(newBallScores);
-
-					// Pop the last ball's data from the state arrays
-					ballWicket.pop();
-					ballWide.pop();
-					ballNO.pop();
-					setBallWicket([...ballWicket]);
-					setBallWide([...ballWide]);
-					setBallNO([...ballNO]);
 				}
+				// Pop the last ball's data from the state arrays
+				ballWicket.pop();
+				ballWide.pop();
+				ballNO.pop();
+				setBallWicket([...ballWicket]);
+				setBallWide([...ballWide]);
+				setBallNO([...ballNO]);
 
 				// Pop the last score from scoreHistory and set it as the current score
 				if (scoreHistory.length > 0) {
@@ -617,6 +636,7 @@ const ScoreCard = () => {
 
 				if (!targetRun || !targetOvers || !targetWickets) {
 					Swal.fire("Error", "Please enter all fields.", "error");
+
 					return;
 				}
 
@@ -694,11 +714,19 @@ const ScoreCard = () => {
 			title: "End of The Innings",
 			html: swalContent,
 			confirmButtonText: "Confirm",
+			showDenyButton: true,
+			denyButtonText: "Match End",
 			preConfirm: () => {
 				// Retrieve the selected values from the dropdowns
 				const targetRun = document.getElementById("targetRun").value; // prettier-ignore
 				const targetOvers =document.getElementById("targetOvers").value; // prettier-ignore
 				const targetWickets =document.getElementById("targetWickets").value; // prettier-ignore
+
+				if (!targetRun || !targetOvers || !targetWickets) {
+					Swal.fire("Error", "Please enter all fields.", "error");
+
+					return;
+				}
 
 				return {
 					targetRun: parseInt(targetRun, 10),
@@ -714,6 +742,9 @@ const ScoreCard = () => {
 				} else {
 					setTargetDetails({});
 				}
+			}
+			if (result.isDenied) {
+				setTargetDetails({});
 				setScore({
 					overs: 0,
 					balls: 0,
