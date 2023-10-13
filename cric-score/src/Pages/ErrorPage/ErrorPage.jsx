@@ -6,7 +6,7 @@ const ErrorPage = () => {
 	useTitle("Error Page");
 	return (
 		<div className="flex items-center justify-center h-screen">
-			<div>
+			<div className="text-center">
 				<h1 className="text-5xl font-bold">Oops!</h1>
 				<Link to="/" className="btn btn-primary my-8">
 					Back to Home

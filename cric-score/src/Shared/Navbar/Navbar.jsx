@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../Providers/AuthProvider";
+import menu from "../../assets/menu.png";
 
 const Navbar = () => {
 	const { user, loading, logOut } = useContext(AuthContext);
@@ -16,16 +17,21 @@ const Navbar = () => {
 	};
 
 	return (
-		<div className="navbar flex items-center justify-center bg-[#661AE6]">
+		<div className="sm:navbar flex items-center justify-center bg-[#661AE6]">
 			<div className="container">
 				<div className="flex-1">
 					<div className="flex items-center">
-						<Link to="/" className="btn btn-ghost normal-case text-5xl">
-							<h1 className="hidden sm:block">CricScore</h1>
+						<Link
+							to="/"
+							className="btn btn-ghost normal-case text-xl sm:text-5xl">
+							<h1 className="block">CricScore</h1>
 						</Link>
 					</div>
 				</div>
-				<div className="flex align-middle justify-center">
+				<div className="sm:hidden flex align-middle justify-center">
+					<img src={menu} alt="" className="ml-1 btn-icon w-5 h-5" />
+				</div>
+				<div className="hidden sm:flex align-middle justify-center">
 					<ul className="menu menu-horizontal px-1">
 						<li>
 							<Link to="/">Home</Link>
