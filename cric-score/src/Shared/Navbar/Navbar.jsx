@@ -1,24 +1,33 @@
-import { useContext } from "react";
+// import { useContext, useState } from "react";
 import { Link } from "react-router-dom";
-import { AuthContext } from "../../Providers/AuthProvider";
+// import { AuthContext } from "../../Providers/AuthProvider";
 import menu from "../../assets/menu.png";
+import { useState } from "react";
 
 const Navbar = () => {
-	const { user, loading, logOut } = useContext(AuthContext);
+	// const { user, loading } = useContext(AuthContext);
 
-	const handleMouseOver = () => {
-		const userName = document.getElementById("userName");
-		userName.classList.remove("invisible");
+	// const handleMouseOver = () => {
+	// 	const userName = document.getElementById("userName");
+	// 	userName.classList.remove("invisible");
+	// };
+
+	// const handleMouseOut = () => {
+	// 	const userName = document.getElementById("userName");
+	// 	userName.classList.add("invisible");
+	// };
+
+	const [isMenuOpen, setIsMenuOpen] = useState(true);
+
+	const toggleMenu = () => {
+		setIsMenuOpen(!isMenuOpen);
 	};
 
-	const handleMouseOut = () => {
-		const userName = document.getElementById("userName");
-		userName.classList.add("invisible");
-	};
+	let screenWidth = window.innerWidth;
 
 	return (
 		<div className="sm:navbar flex items-center justify-center bg-[#661AE6]">
-			<div className="container">
+			<div className="container relative">
 				<div className="flex-1">
 					<div className="flex items-center">
 						<Link
@@ -28,37 +37,51 @@ const Navbar = () => {
 						</Link>
 					</div>
 				</div>
-				<div className="sm:hidden flex align-middle justify-center">
-					<img src={menu} alt="" className="ml-1 btn-icon w-5 h-5" />
+				<div className="sm:hidden absolute top-0 right-0 p-1">
+					<img src={menu} alt="" className="w-10 h-10" onClick={toggleMenu} />
 				</div>
-				<div className="hidden sm:flex align-middle justify-center">
-					<ul className="menu menu-horizontal px-1">
+				<div
+					className={`${
+						screenWidth >= 768
+							? "flex align-middle justify-center"
+							: "absolute top-10 right-0 bg-[#661AE6] p-2"
+					}${isMenuOpen && screenWidth < 768 ? " hidden" : " rounded z-10"}`}>
+					<ul
+						className={`${
+							screenWidth >= 768
+								? "menu menu-horizontal px-1"
+								: `${isMenuOpen ? "hidden" : ""}`
+						}`}>
 						<li>
 							<Link to="/">Home</Link>
 						</li>
 						<li>
 							<Link to="/faq">FAQ</Link>
 						</li>
+						{/* <li>
+							{loading ? (
+								<div className="flex justify-center">
+									<button
+										className="bg-warning text-white px-4 py-2 rounded-md flex items-center"
+										disabled>
+										<span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></span>
+										<span className="hidden sm:inline">Loading...</span>
+									</button>
+								</div>
+							) : (
+								!!user || <Link to="/login">Login</Link>
+							)}
+						</li> */}
 					</ul>
-					{loading ? (
-						<div className="flex justify-center">
-							<button
-								className="bg-warning text-white px-4 py-2 rounded-md flex items-center"
-								disabled>
-								<span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></span>
-								<span className="hidden sm:inline">Loading...</span>
-							</button>
-						</div>
-					) : (
-						!!user || (
-							<ul className="menu menu-horizontal px-1">
-								<li>
-									<Link to="/login">Login</Link>
-								</li>
-							</ul>
-						)
-					)}
-					{!!user && (
+				</div>
+			</div>
+		</div>
+	);
+};
+
+export default Navbar;
+{
+	/* {!!user && (
 						<div className="dropdown dropdown-end">
 							<label tabIndex={0} className="btn btn-ghost btn-circle avatar">
 								<div
@@ -85,11 +108,5 @@ const Navbar = () => {
 								</li>
 							</ul>
 						</div>
-					)}
-				</div>
-			</div>
-		</div>
-	);
-};
-
-export default Navbar;
+					)} */
+}
