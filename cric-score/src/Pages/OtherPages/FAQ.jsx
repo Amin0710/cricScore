@@ -16,6 +16,18 @@ const FAQ = () => {
 			<div className="container bg-gray-200 rounded p-5">
 				<div className="chat chat-start" data-aos="zoom-in-right">
 					<div className="chat-bubble whitespace-normal w-full md:w-2/5 chat-bubble-black">
+						{`Q: There are a lot of pop-ups with no close option. If I open a pop-up and don't 
+						want to take any action or if I simply want to close the scoreboard without making any changes, how do I close it?`}
+					</div>
+				</div>
+				<div className="chat chat-end" data-aos="zoom-in-left">
+					<div className="chat-bubble whitespace-normal w-full md:w-2/5 chat-bubble-info">
+						{`A: Closing a pop-up without taking any action is simple. Just click anywhere in the black shaded area above or below the pop-up.
+						This action will close the pop-up and void any actions you might have chosen.`}
+					</div>
+				</div>
+				<div className="chat chat-start" data-aos="zoom-in-right">
+					<div className="chat-bubble whitespace-normal w-full md:w-2/5 chat-bubble-black">
 						Q: How do I record a run scored from the batsman&apos;s bat?
 					</div>
 				</div>
