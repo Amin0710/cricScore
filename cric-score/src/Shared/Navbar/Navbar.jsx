@@ -57,8 +57,10 @@ const Navbar = () => {
 							: "flex align-middle justify-center"
 					} ${isMobile && isMenuClose ? " hidden" : " rounded"}`}>
 					<ul
-						className={`${isMobile ? "" : "menu menu-horizontal px-1"} ${
-							isMobile && !isMenuClose ? "" : "hidden"
+						className={`${
+							!isMobile
+								? "menu menu-horizontal px-1"
+								: ` ${!isMenuClose ? "" : "hidden"}`
 						}`}>
 						<li>
 							<Link to="/">Home</Link>
