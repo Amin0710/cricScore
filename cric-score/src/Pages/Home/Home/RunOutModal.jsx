@@ -8,6 +8,7 @@ const RunOutModal = ({
 	handleConfirmRunout,
 	activeNewBatsmanSide,
 	setActiveNewBatsmanSide,
+	errorNewBatsmanSide,
 }) => {
 	const handleNewBatsmanSide = (buttonId) => {
 		setActiveNewBatsmanSide(buttonId);
@@ -20,7 +21,7 @@ const RunOutModal = ({
 			ariaHideApp={false}
 			className="flex items-center justify-center modal-bounce"
 			style={{ overlay: { backgroundColor: "rgba(0, 0, 0, 0.4)" } }}>
-			<div className="mt-5 mx-2 bg-white rounded text-black p-4 ">
+			<div className="mt-5 mx-2 bg-white rounded text-black p-4">
 				<h1 className="text-4xl text-center text-gray-800 mb-3">
 					Runout Details
 				</h1>
@@ -39,6 +40,11 @@ const RunOutModal = ({
 					<tbody>
 						<tr>
 							<td className="border p-2" colSpan="3">
+								{errorNewBatsmanSide && (
+									<p className="text-red-500 text-center my-2 font-bold">
+										{errorNewBatsmanSide}
+									</p>
+								)}
 								<div className="flex justify-around gap-5">
 									<button
 										id="keeperSide"

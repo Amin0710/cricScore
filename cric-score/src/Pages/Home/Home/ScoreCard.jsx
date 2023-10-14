@@ -56,6 +56,8 @@ const ScoreCard = () => {
 	const [activeNewBatsmanSide, setActiveNewBatsmanSide] = useState("");
 	const [dismissalAwardedTo, setDismissalAwardedTo] = useState("");
 	const [selectedBallIndex, setSelectedBallIndex] = useState(null);
+	const [errorNewBatsmanSide, setErrorNewBatsmanSide] = useState("");
+	const [errorWicketAwarded, setErrorWicketAwarded] = useState("");
 
 	useEffect(() => {
 		if (targetDetails.targetRun - score.runs <= 0) {
@@ -65,7 +67,7 @@ const ScoreCard = () => {
 				confirmButtonText: "Confirm",
 			}).then((result) => {
 				if (result.isConfirmed) {
-					handleEndInnings();
+					handleEndInnings(true);
 				}
 			});
 		} else if (
@@ -78,7 +80,7 @@ const ScoreCard = () => {
 				confirmButtonText: "Confirm",
 			}).then((result) => {
 				if (result.isConfirmed) {
-					handleEndInnings();
+					handleEndInnings(true);
 				}
 			});
 		}
@@ -163,6 +165,17 @@ const ScoreCard = () => {
 						icon: "error",
 						title: "Oops... All out",
 						text: "Press End of Innings",
+						showCancelButton: true,
+						confirmButtonColor: "#C6313A",
+						confirmButtonText: "End of Innings",
+					}).then((result) => {
+						if (result.isConfirmed) {
+							if (targetDetails.targetRun || targetDetails.targetOvers) {
+								handleEndInnings(true);
+							} else {
+								handleEndInnings();
+							}
+						}
 					});
 				}
 				return {
@@ -304,6 +317,7 @@ const ScoreCard = () => {
 	};
 
 	const handleOut = () => {
+		setErrorWicketAwarded("");
 		setIsOutModalOpen(true);
 	};
 	function handleRunoutByeChange(event) {
@@ -311,11 +325,7 @@ const ScoreCard = () => {
 	}
 	const handleConfirmWicket = () => {
 		if (!dismissalAwardedTo) {
-			Swal.fire(
-				"Error",
-				"Please select to whom the dismissal was awarded.",
-				"error"
-			);
+			setErrorWicketAwarded("Please select to whom the dismissal was awarded.");
 			return;
 		} else if (dismissalAwardedTo != "none") {
 			handleRuns(0, false, false, 1);
@@ -325,6 +335,7 @@ const ScoreCard = () => {
 	};
 
 	const handleRunout = () => {
+		setErrorNewBatsmanSide("");
 		setIsRunoutModalOpen(true);
 	};
 
@@ -501,12 +512,9 @@ const ScoreCard = () => {
 
 	const handleConfirmRunout = () => {
 		if (!activeNewBatsmanSide) {
-			Swal.fire(
-				"Error",
-				"Please select which side did the new batsman arrive on.",
-				"error"
+			setErrorNewBatsmanSide(
+				"Please select which side did the new batsman arrive on."
 			);
-			return;
 		} else {
 			const runoutRunsDropdown = document.getElementById("runoutRunsDropdown").value; // prettier-ignore
 			const runoutWideNoDropdown =document.getElementById("runoutWideNoDropdown").value; // prettier-ignore
@@ -635,16 +643,14 @@ const ScoreCard = () => {
 				const targetWickets =document.getElementById("targetWickets").value; // prettier-ignore
 
 				if (!targetRun || !targetOvers || !targetWickets) {
-					Swal.fire("Error", "Please enter all fields.", "error");
-
-					return;
+					Swal.showValidationMessage("Please enter all fields.");
+				} else {
+					return {
+						targetRun: parseInt(targetRun, 10),
+						targetOvers: parseInt(targetOvers, 10),
+						targetWickets: parseInt(targetWickets, 10),
+					};
 				}
-
-				return {
-					targetRun: parseInt(targetRun, 10),
-					targetOvers: parseInt(targetOvers, 10),
-					targetWickets: parseInt(targetWickets, 10),
-				};
 			},
 		}).then((result) => {
 			if (result.isConfirmed) {
@@ -654,7 +660,7 @@ const ScoreCard = () => {
 		});
 	};
 
-	const handleEndInnings = () => {
+	const handleEndInnings = (endMatch = false) => {
 		screenWidth = window.innerWidth;
 		const swalContentTarget = (
 			<div className="max-w-full">
@@ -710,7 +716,7 @@ const ScoreCard = () => {
 
 		root.render(swalContentTarget);
 
-		Swal.fire({
+		const swalOptions = {
 			title: "End of The Innings",
 			html: swalContent,
 			confirmButtonText: "Confirm",
@@ -722,21 +728,25 @@ const ScoreCard = () => {
 				const targetOvers =document.getElementById("targetOvers").value; // prettier-ignore
 				const targetWickets =document.getElementById("targetWickets").value; // prettier-ignore
 
-				if (!targetRun || !targetOvers || !targetWickets) {
-					Swal.fire("Error", "Please enter all fields.", "error");
-
-					return;
+				if (!targetOvers || !targetWickets) {
+					Swal.showValidationMessage("Please enter both Overs and Wickets."); // Show an error message
+				} else {
+					return {
+						targetRun: parseInt(targetRun, 10),
+						targetOvers: parseInt(targetOvers, 10),
+						targetWickets: parseInt(targetWickets, 10),
+					};
 				}
-
-				return {
-					targetRun: parseInt(targetRun, 10),
-					targetOvers: parseInt(targetOvers, 10),
-					targetWickets: parseInt(targetWickets, 10),
-				};
 			},
-		}).then((result) => {
+		};
+
+		if (endMatch) {
+			swalOptions.showConfirmButton = false;
+		}
+
+		Swal.fire(swalOptions).then((result) => {
+			const { targetRun, targetOvers, targetWickets } = result.value;
 			if (result.isConfirmed) {
-				const { targetRun, targetOvers, targetWickets } = result.value;
 				if (targetRun && targetOvers && targetWickets) {
 					setTargetDetails({ targetRun, targetOvers, targetWickets });
 				} else {
@@ -745,19 +755,20 @@ const ScoreCard = () => {
 			}
 			if (result.isDenied) {
 				setTargetDetails({});
-				setScore({
-					overs: 0,
-					balls: 0,
-					runs: 0,
-					wickets: 0,
-				});
-				setBallScores([]);
-				setBallWicket([]);
-				setBallWide([]);
-				setBallNO([]);
-				setOversHistory([]);
-				setScoreHistory([]);
 			}
+
+			setScore({
+				overs: 0,
+				balls: 0,
+				runs: 0,
+				wickets: 0,
+			});
+			setBallScores([]);
+			setBallWicket([]);
+			setBallWide([]);
+			setBallNO([]);
+			setOversHistory([]);
+			setScoreHistory([]);
 		});
 	};
 
@@ -901,7 +912,7 @@ const ScoreCard = () => {
 						<div className="grid grid-cols-2 gap-2 mt-5">
 							<button
 								className="btn btn-neutral text-white"
-								onClick={handleEndInnings}>
+								onClick={() => handleEndInnings()}>
 								End of the innings
 							</button>
 							<button
@@ -919,6 +930,7 @@ const ScoreCard = () => {
 				onRequestClose={() => setIsOutModalOpen(false)}
 				handleConfirmWicket={handleConfirmWicket}
 				dismissalAwardedTo={dismissalAwardedTo}
+				errorWicketAwarded={errorWicketAwarded}
 				setDismissalAwardedTo={setDismissalAwardedTo}></OutModal>
 
 			<RunOutModal
@@ -928,7 +940,8 @@ const ScoreCard = () => {
 				handleRunoutByeChange={handleRunoutByeChange}
 				handleConfirmRunout={handleConfirmRunout}
 				activeNewBatsmanSide={activeNewBatsmanSide}
-				setActiveNewBatsmanSide={setActiveNewBatsmanSide}></RunOutModal>
+				setActiveNewBatsmanSide={setActiveNewBatsmanSide}
+				errorNewBatsmanSide={errorNewBatsmanSide}></RunOutModal>
 
 			<ScoreboardModal
 				isOpen={isScoreboardOpen}
