@@ -6,6 +6,7 @@ const RunOutModal = ({
 	handleConfirmWicket,
 	dismissalAwardedTo,
 	setDismissalAwardedTo,
+	errorWicketAwarded,
 }) => {
 	const handleDismissalAwardedTo = (buttonId) => {
 		setDismissalAwardedTo(buttonId);
@@ -18,7 +19,7 @@ const RunOutModal = ({
 			ariaHideApp={false}
 			className="flex items-center justify-center modal-bounce"
 			style={{ overlay: { backgroundColor: "rgba(0, 0, 0, 0.4)" } }}>
-			<div className="mt-5 mx-2 bg-white rounded text-black p-4 ">
+			<div className="mt-5 mx-2 bg-white rounded text-black p-4">
 				<h1 className="text-4xl text-center text-gray-800 mb-3">
 					Wicket Details
 				</h1>
@@ -91,6 +92,11 @@ const RunOutModal = ({
 						</tr>
 					</tbody>
 				</table>
+				{errorWicketAwarded && (
+					<p className="text-red-500 text-center my-2 font-bold">
+						{errorWicketAwarded}
+					</p>
+				)}
 				<div className="flex justify-center mt-5">
 					<button
 						style={{ height: "41px" }}
